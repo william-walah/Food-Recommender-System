@@ -94,7 +94,8 @@ public class MainDocumentController implements Initializable {
         if (t.length() < 1) {
             check_userId_input.setText("Error: Anda tidak mengisi data");
         } else {
-            // start the program..
+            check_userId_input.setText("");
+            // start the program...
         }
     }
 
@@ -138,6 +139,7 @@ public class MainDocumentController implements Initializable {
                             btn.setOnAction(event -> {
                                 User u = getTableView().getItems().get(getIndex());
                                 userId_choice.setText(u.getId());
+                                check_userId_input.setText("");
                             });
                             setGraphic(btn);
                             setText(null);

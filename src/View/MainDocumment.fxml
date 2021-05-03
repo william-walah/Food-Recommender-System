@@ -9,12 +9,13 @@
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.text.Font?>
 
 <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="1280.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller.MainDocumentController">
    <children>
-      <TabPane fx:id="mainTable" prefHeight="675.0" prefWidth="1280.0" tabClosingPolicy="UNAVAILABLE">
+      <TabPane fx:id="mainTable" prefHeight="675.0" prefWidth="699.0" tabClosingPolicy="UNAVAILABLE">
         <tabs>
           <Tab text="Select User">
             <content>
@@ -32,11 +33,11 @@
                            </children>
                         </StackPane>
                         <Label layoutX="39.0" layoutY="344.0" prefHeight="21.0" prefWidth="91.0" text="Pilihan User:" />
-                        <TextField fx:id="userId_choice" layoutX="130.0" layoutY="339.0" />
+                        <TextField fx:id="userId_choice" editable="false" layoutX="130.0" layoutY="339.0" />
                         <Label fx:id="check_userId_input" layoutX="39.0" layoutY="379.0" textFill="#b52727" />
-                        <Label layoutX="726.0" layoutY="22.0" text="Process Log" />
-                        <TextArea layoutX="726.0" layoutY="43.0" prefHeight="564.0" prefWidth="524.0" />
-                        <Button layoutX="39.0" layoutY="560.0" mnemonicParsing="false" onAction="#startFactorization" prefHeight="31.0" prefWidth="168.0" text="Mulai Faktorisasi">
+                        <Label layoutX="39.0" layoutY="415.0" text="Process Log" />
+                        <TextArea fx:id="log_field" editable="false" layoutX="39.0" layoutY="436.0" prefHeight="175.0" prefWidth="618.0" />
+                        <Button layoutX="492.0" layoutY="339.0" mnemonicParsing="false" onAction="#startFactorization" prefHeight="31.0" prefWidth="165.0" text="Mulai Faktorisasi">
                            <font>
                               <Font name="System Bold" size="15.0" />
                            </font>
@@ -49,13 +50,17 @@
             <content>
               <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                      <children>
-                        <TableView fx:id="recipes_table" layoutY="45.0" prefHeight="444.0" prefWidth="800.0">
-                          <columns>
-                            <TableColumn fx:id="recipeCol" prefWidth="162.0" text="Recipes" />
-                            <TableColumn fx:id="ingredientsCol" prefWidth="535.0" text="Ingredients" />
-                              <TableColumn fx:id="ratingCol" prefWidth="102.0" text="Rate" />
-                          </columns>
-                        </TableView>
+                        <StackPane layoutX="37.0" layoutY="45.0" prefHeight="441.0" prefWidth="603.0">
+                           <children>
+                              <TableView fx:id="recipes_table" prefHeight="444.0" prefWidth="606.0">
+                                <columns>
+                                  <TableColumn fx:id="recipeCol" prefWidth="139.0" text="Recipes" />
+                                  <TableColumn fx:id="ingredientsCol" prefWidth="377.0" text="Ingredients" />
+                                    <TableColumn fx:id="ratingCol" prefWidth="87.0" resizable="false" text="Rate" />
+                                </columns>
+                              </TableView>
+                           </children>
+                        </StackPane>
                      </children></AnchorPane>
             </content>
           </Tab>
@@ -67,5 +72,6 @@
             <Font name="Arial Bold" size="15.0" />
          </font>
       </Label>
+      <Pane layoutX="698.0" prefHeight="720.0" prefWidth="584.0" styleClass="result-pane" stylesheets="@../Style/style.css" />
    </children>
 </AnchorPane>
