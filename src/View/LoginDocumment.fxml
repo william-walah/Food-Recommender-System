@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane id="AnchorPane" prefHeight="600.0" prefWidth="800.0" style="-fx-background-color: #051c36;" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller.LoginDocumentController">
+    <children>
+      <TextField fx:id="user_field" layoutX="285.0" layoutY="260.0" prefHeight="31.0" prefWidth="230.0" />
+      <Label layoutX="285.0" layoutY="229.0" text="username" textFill="WHITE" />
+      <Label fx:id="err_username" layoutX="285.0" layoutY="298.0" text="username tidak boleh kosong" textFill="#c69090" visible="false">
+         <font>
+            <Font name="Arial" size="15.0" />
+         </font>
+      </Label>
+      <Button fx:id="login" layoutX="353.0" layoutY="358.0" mnemonicParsing="false" onAction="#handleLogin" prefHeight="31.0" prefWidth="95.0" text="Masuk">
+         <font>
+            <Font name="Arial Bold" size="15.0" />
+         </font>
+      </Button>
+    </children>
+</AnchorPane>
