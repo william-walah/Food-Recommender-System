@@ -1,4 +1,7 @@
-.
 .result-pane{
     -fx-background-color: #869bc2;
+}
+
+.logging_field{
+    -fx-padding: 5 5 5 5;   
 }

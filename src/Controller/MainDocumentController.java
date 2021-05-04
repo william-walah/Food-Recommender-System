@@ -21,6 +21,7 @@ import javafx.event.ActionEvent;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.util.Callback;
@@ -61,14 +62,20 @@ public class MainDocumentController implements Initializable {
 
     @FXML
     private TextField userId_choice;
+    
+    @FXML
+    private TextArea log_field;
 
     @FXML
     private Label check_userId_input;
+    
+    @FXML
+    private Button startBtn;
 
     private ObservableList<Recipe> data_recipe;
     private ObservableList<User> data_user;
 
-    private final Factorization f = new Factorization();
+    private final Factorization f = new Factorization(this);
 
     /**
      * Initializes the controller class.
@@ -80,7 +87,7 @@ public class MainDocumentController implements Initializable {
         boolean loadRecipeData = f.readRecipesData();
         boolean loadUserData = f.readUsersData();
         if (loadRecipeData && loadUserData) {
-            this.programStatus.setText("success reading data");
+            this.programStatus.setText("success reading view data");
             this.initializeTable();
         } else {
             this.programStatus.setText("something wrong when reading dataset");
@@ -89,17 +96,23 @@ public class MainDocumentController implements Initializable {
     }
 
     @FXML
-    void startFactorization(ActionEvent event) {
+    private void startFactorization(ActionEvent event) {
         String t = this.userId_choice.getText();
         if (t.length() < 1) {
             check_userId_input.setText("Error: Anda tidak mengisi data");
         } else {
+            programStatus.setText("In-process of factorization");
             check_userId_input.setText("");
+            f.setUserId(t);
+            startBtn.setDisable(true);
             // start the program...
+            // using thread so that the UI is responding
+            Thread mainThread = new Thread(f);
+            mainThread.start();
         }
     }
 
-    public void initializeTable() {
+    private void initializeTable() {
         // recipe table data
         this.data_recipe = FXCollections.observableList(f.getRecipes());
         this.recipeCol.setCellValueFactory(
@@ -153,5 +166,9 @@ public class MainDocumentController implements Initializable {
         action_col.setCellFactory(cellFactory);
         
         this.user_table.setItems(this.data_user);
+    }
+    
+    public void insertLog(String s){
+        this.log_field.appendText(s);
     }
 }

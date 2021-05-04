@@ -10,7 +10,13 @@ package Model;
  * @author asus
  */
 abstract class Matrix {
-    private double[][] entry;
+    protected double[][] entry;
+    
+    public Matrix(int row, int col){
+        this.entry = new double[row][col];
+    }
+    
+    public Matrix(double[][] e){this.entry = e;}
     
     public double[][] getEntry(){return this.entry;}
     
@@ -71,13 +77,24 @@ abstract class Matrix {
         return result;
     }
     
-    public void printEntry(){
+    // time-consuming process (500*500 = 250000 entry)
+    public String printEntry(){
+        System.out.println(entry.length+","+entry[0].length);
+        String res = "";
         for (int i = 0; i < entry.length; i++) {
             for (int j = 0; j < entry[i].length; j++) {
-                System.out.print(this.entry[i][j]+" | ");
+                res += this.entry[i][j]+" | ";
             }
-            System.out.println("");
+            res += "\n";
         }
+        return res;
     }
-}
     
+    public void changeEntry(int row, int col, double newEntry){
+        this.entry[row][col] = newEntry;
+    }
+    
+    public int getRowLength(){return this.entry.length;}
+    public int getColLength(){return this.entry[0].length;}
+}
+        

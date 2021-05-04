@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<jnlp spec="1.0" xmlns:jfx="http://javafx.com" href="Recommendation_Model.jnlp">
+  <information>
+    <title>Recommendation_Model</title>
+    <vendor>asus</vendor>
+    <description>null</description>
+    <offline-allowed/>
+  </information>
+  <resources>
+    <j2se version="1.6+" href="http://java.sun.com/products/autodl/j2se"/>
+    <jar href="Recommendation_Model.jar" size="93200" download="eager" />
+    <jar href="lib\mssql-jdbc-9.2.1.jre8.jar" size="1327629" download="eager" />
+  </resources>
+  <applet-desc  width="800" height="600" main-class="com.javafx.main.NoJavaFXFallback"  name="Recommendation_Model" >
+    <param name="requiredFXVersion" value="8.0+"/>
+  </applet-desc>
+  <jfx:javafx-desc  width="800" height="600" main-class="View.FXMain"  name="Recommendation_Model" />
+  <update check="always"/>
+</jnlp>

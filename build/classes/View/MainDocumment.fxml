@@ -36,12 +36,12 @@
                         <TextField fx:id="userId_choice" editable="false" layoutX="130.0" layoutY="339.0" />
                         <Label fx:id="check_userId_input" layoutX="39.0" layoutY="379.0" textFill="#b52727" />
                         <Label layoutX="39.0" layoutY="415.0" text="Process Log" />
-                        <TextArea fx:id="log_field" editable="false" layoutX="39.0" layoutY="436.0" prefHeight="175.0" prefWidth="618.0" />
-                        <Button layoutX="492.0" layoutY="339.0" mnemonicParsing="false" onAction="#startFactorization" prefHeight="31.0" prefWidth="165.0" text="Mulai Faktorisasi">
+                        <Button fx:id="startBtn" layoutX="492.0" layoutY="339.0" mnemonicParsing="false" onAction="#startFactorization" prefHeight="31.0" prefWidth="165.0" text="Mulai Faktorisasi">
                            <font>
                               <Font name="System Bold" size="15.0" />
                            </font>
                         </Button>
+                        <TextArea fx:id="log_field" editable="false" layoutX="39.0" layoutY="445.0" prefHeight="191.0" prefWidth="619.0" styleClass="logging_field" stylesheets="@../Style/style.css" />
                      </children>
                   </AnchorPane>
             </content>

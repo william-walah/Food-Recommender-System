@@ -15,19 +15,19 @@ import javafx.beans.property.SimpleStringProperty;
  */
 public class Recipe {
 
-    private int id;
+    private String id;
     private SimpleStringProperty name;
     private SimpleStringProperty userRating;
     private Ingredient i;
 
-    public Recipe(int id, String name, String ingreList) {
+    public Recipe(String id, String name, String ingreList) {
         this.id = id;
         this.name = new SimpleStringProperty(name);
         this.i = new Ingredient(ingreList);
         this.userRating = new SimpleStringProperty("0");
     }
 
-    public int getId() {
+    public String getId() {
         return this.id;
     }
 
