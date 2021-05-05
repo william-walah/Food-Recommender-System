@@ -10,8 +10,8 @@ package Model;
  * @author asus
  */
 public class Pair {
-    private String p1;
-    private String p2;
+    private String p1; //user
+    private String p2; //recipe
     
     public Pair(String s1, String s2){
         this.p1 = s1;
@@ -26,4 +26,7 @@ public class Pair {
     public String[] getPair(){
         return new String[] {this.p1,this.p2};
     }
+    
+    public String getUser(){return p1;}
+    public String getRecipe(){return p2;}
 }

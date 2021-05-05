@@ -27,4 +27,22 @@ public class FactorMatrix extends Matrix{
             entry[i] = Stream.generate(randomValue).limit(entry[i].length).mapToDouble(Double::valueOf).toArray();
         }   
     }
+    
+    public double[] getFactorByIndex(int i){
+        return this.entry[i];
+    }
+    
+    public double calculateVectorLength(){
+        double res = 0.0;
+        for (int i = 0; i < entry.length; i++) {
+            double currFactor = 0.0;
+            for (int j = 0; j < entry[i].length; j++) {
+                currFactor += Math.pow(entry[i][j],2);
+            }
+            res += Math.sqrt(currFactor);
+        }
+        return res;
+    }
+    
+    public double[][] getEntry(){return this.entry;}
 }

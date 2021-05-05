@@ -19,6 +19,7 @@ abstract class Matrix {
     public Matrix(double[][] e){this.entry = e;}
     
     public double[][] getEntry(){return this.entry;}
+    public double getEntryByIndex(int i, int j){return this.entry[i][j];}
     
     // basic method
     public double[][] transpose(){

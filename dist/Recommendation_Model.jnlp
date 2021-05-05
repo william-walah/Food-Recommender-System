@@ -8,8 +8,9 @@
   </information>
   <resources>
     <j2se version="1.6+" href="http://java.sun.com/products/autodl/j2se"/>
-    <jar href="Recommendation_Model.jar" size="99489" download="eager" />
+    <jar href="Recommendation_Model.jar" size="105644" download="eager" />
     <jar href="lib\mssql-jdbc-9.2.1.jre8.jar" size="1327629" download="eager" />
+    <jar href="lib\opencsv-5.4.jar" size="230363" download="eager" />
   </resources>
   <applet-desc  width="800" height="600" main-class="com.javafx.main.NoJavaFXFallback"  name="Recommendation_Model" >
     <param name="requiredFXVersion" value="8.0+"/>

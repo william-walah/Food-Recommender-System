@@ -22,24 +22,30 @@ import java.util.Random;
  */
 public class Dataset extends Matrix {
     private HashMap<String, Integer> recipeMap;
+    private HashMap<Integer, String> recipeMap_r;
     private HashMap<String, Integer> userMap;
+    private HashMap<Integer, String> userMap_r;
     private List<Pair> userRecipe_pair; //List of Pair for train matrix
     private List<Pair> maskPair; //List of Pair for test matrix
     
     public Dataset(List<Recipe> r, List<User> u){
         super(u.size(),r.size());
         this.recipeMap = new HashMap<String, Integer>();
+        this.recipeMap_r = new HashMap<Integer, String>();
         this.userMap = new HashMap<String, Integer>();
+        this.userMap_r = new HashMap<Integer, String>();
         this.userRecipe_pair = new ArrayList<Pair>();
         this.maskPair = new ArrayList<Pair>();
         int index = 0;
         for(Recipe o: r){
             recipeMap.put(o.getId(), index);
+            recipeMap_r.put(index, o.getId());
             index++;
         }
         index = 0;
         for(User o: u){
             userMap.put(o.getId(), index);
+            userMap_r.put(index, o.getId());
             index++;
         }
     }
@@ -107,4 +113,6 @@ public class Dataset extends Matrix {
     public List<Pair> getTestPair(){return this.maskPair;}
     public HashMap<String, Integer> getRecipeMap(){return this.recipeMap;}
     public HashMap<String, Integer> getUserMap(){return this.userMap;}
+    public HashMap<Integer, String> getReverseRecipeMap(){return this.recipeMap_r;}
+    public HashMap<Integer, String> getReverseUserMap(){return this.userMap_r;}
 }
