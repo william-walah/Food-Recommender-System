@@ -8,7 +8,7 @@
   </information>
   <resources>
     <j2se version="1.6+" href="http://java.sun.com/products/autodl/j2se"/>
-    <jar href="Recommendation_Model.jar" size="107731" download="eager" />
+    <jar href="Recommendation_Model.jar" size="112637" download="eager" />
     <jar href="lib\mssql-jdbc-9.2.1.jre8.jar" size="1327629" download="eager" />
     <jar href="lib\opencsv-5.4.jar" size="230363" download="eager" />
   </resources>

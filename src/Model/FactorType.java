@@ -12,5 +12,6 @@ package Model;
 public enum FactorType {
     USER,
     RECIPES,
-    INGREDIENTS
+    INGREDIENTS,
+    RECIPE_ING_MAP,
 }

@@ -8,6 +8,7 @@ package Controller;
 import Model.Dataset;
 import Model.FactorMatrix;
 import Model.FactorType;
+import Model.FactorizationUtil;
 import Model.MatrixUtil;
 import Model.Recipe;
 import Model.TestMatrix;
@@ -21,13 +22,16 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 /**
@@ -37,28 +41,30 @@ import java.util.stream.Collectors;
 public class Factorization implements Runnable {
     private List<Recipe> recipes;
     private List<User> users;
+    private List<String> ingredients;
     private String chosenUserId;
     private MainDocumentController mdc;
     private TrainMatrix trainM;
     private TestMatrix testM; 
     private double[][] modelRes;
-    private final int LATENT_SIZE = 2;
-    private final double LAMBDA = 1;
     private final int MAX_LOOP = 1000;
     private final double MIN_OBJECTIVE_VAL = 10.0;
-    private final double LEARNING_RATE = 0.0001;
-    
     
     //
     private List<Pair> trainPair;
     private HashMap<String, Integer> userMap;     //memetakan ID user kepada index matrix user & list user
     private HashMap<String, Integer> recipeMap;   //memetakan ID resep kepada index matrix resep & list resep
+    private HashMap<String, Integer> ingredientMap;
     private HashMap<Integer, String> userMap_r;   //memetakan index matrix / list user dengan ID user
     private HashMap<Integer, String> recipeMap_r; //memetakan index matriks / list resep dengan ID resep
-   
+    private HashMap<Integer, String> ingredientMap_r;
+    
     public Factorization(MainDocumentController c){
         this.recipes = new ArrayList<Recipe>(); 
         this.users = new ArrayList<User>(); 
+        this.ingredients = new ArrayList<String>();
+        this.ingredientMap = new HashMap<String,Integer>();
+        this.ingredientMap_r = new HashMap<Integer,String>();
         this.mdc = c;
         this.trainPair = null;
         this.userMap = null;
@@ -75,14 +81,24 @@ public class Factorization implements Runnable {
             BufferedReader br = new BufferedReader(fr);
             String line = "";
             String[] tempArr;
+            Set<String> ingredientsUniqueId = new HashSet<String>();
             while((line = br.readLine()) != null) {
                tempArr = line.split("[|]+");
-               this.recipes.add(new Recipe(tempArr[0],tempArr[1],tempArr[2]));
+               this.recipes.add(new Recipe(tempArr));
+               ingredientsUniqueId.addAll(Arrays.asList(tempArr[3].split(",")));
             }
             br.close();
+            int index = 0;
+            for(String uniqueId: ingredientsUniqueId){
+                this.ingredients.add(uniqueId);
+                this.ingredientMap.put(uniqueId,index);
+                this.ingredientMap_r.put(index,uniqueId);
+                index++;
+            }
             success = true;
          } catch(IOException ioe) {
             ioe.printStackTrace();
+            System.exit(1);
          } finally {
             return success;
         }
@@ -113,162 +129,6 @@ public class Factorization implements Runnable {
     
     public void setUserId(String s){chosenUserId = s;}
     
-    public double objectiveFunction(FactorMatrix user, FactorMatrix recipe){
-        double sumOfErrorSquared = 0.0;
-        for (int i = 0; i < trainPair.size(); i++) {
-            Pair curr = trainPair.get(i);
-            String[] p = curr.getPair();
-            int userIndex = userMap.get(p[0]);
-            int recipeIndex = recipeMap.get(p[1]);
-            double[] userFactor = user.getFactorByIndex(userIndex);
-            double[] recipeFactor = recipe.getFactorByIndex(recipeIndex);
-            double predicted = MatrixUtil.vectorMultiplication(userFactor, recipeFactor);
-            //truncated value so it lays between 0-5
-            //current latent factor length = 2
-            //possible value is 5*5 + 5*5 = 50, so its divided by 10
-            predicted = predicted/10;
-            //System.out.println(String.format("%.3f_p %.3f_a",predicted,trainM.getEntryByIndex(userIndex, recipeIndex)));
-            sumOfErrorSquared += Math.pow((trainM.getEntryByIndex(userIndex, recipeIndex) - predicted),2);
-        }        
-        
-//        System.out.println(String.format("%.3f",sumOfErrorSquared));
-        double penalty = LAMBDA*(user.calculateVectorLength()+recipe.calculateVectorLength());
-//        System.out.println(String.format("%.3f",penalty));
-        return sumOfErrorSquared + penalty;
-    }
-    
-    public void alternatingGradientDescent(FactorMatrix user, FactorMatrix recipe){
-        //update the user matrix factor value
-        double[][] userVector = user.getEntry();
-        for (int i = 0; i < userVector.length; i++) {
-            double[] newLatent = MatrixUtil.vectorCalculation(
-                    userVector[i], //previous value
-                    calculateLearningValue(userVector[i], 
-                            i, recipe, trainPair, 
-                            userMap_r, FactorType.USER), //learning value
-                    1); //addition
-            //um... ubah value kalau lebih dari 5 jadi 5, kurang dari 0 jadi 0?
-            for (int j = 0; j < newLatent.length; j++) {
-//                System.out.print(newLatent[j]+", ");
-                if(newLatent[j] > 5) newLatent[j] = 5.0;
-                else if(newLatent[j] < 0) newLatent[j] = 0.0;
-//                System.out.println(newLatent[j]);
-            }
-            userVector[i] = newLatent;
-        }
-        //update the recipe matrix factor value
-        double[][] recipeVetor = recipe.getEntry();
-        for (int i = 0; i < recipeVetor.length; i++) {
-            double[] newLatent = MatrixUtil.vectorCalculation(
-                    recipeVetor[i], //previous value
-                    calculateLearningValue(recipeVetor[i], 
-                            i, user, trainPair, 
-                            recipeMap_r, FactorType.RECIPES), //learning value
-                    1); //addition
-            for (int j = 0; j < newLatent.length; j++) {
-//                System.out.print(newLatent[j]+", ");
-                if(newLatent[j] > 5) newLatent[j] = 5.0;
-                else if(newLatent[j] < 0) newLatent[j] = 0.0;
-//                System.out.println(newLatent[j]);
-            }
-            recipeVetor[i] = newLatent;
-        }
-    }
-    
-    public double[] calculateLearningValue(double[] latentVector, int index, FactorMatrix fm,
-            List<Pair> observable, HashMap<Integer, String> reverseMap, FactorType type){
-        
-        String targetId = reverseMap.get(index);
-        double[] res = new double[latentVector.length];
-        double[] lambdaTarget = null;
-        List<Pair> filtered = null;
-        
-        switch(type){
-            case USER:
-                filtered = observable.stream().filter(p -> p.getUser().equals(targetId)).collect(Collectors.toList());
-                //calculate lambda times targeted latent vector
-                lambdaTarget = MatrixUtil.scalarMultiplication(LAMBDA, latentVector);
-                for (int i = 0; i < filtered.size(); i++) {
-                    int recipe_index = recipeMap.get(filtered.get(i).getRecipe());
-                    double[] pairLatent = fm.getFactorByIndex(recipe_index);
-                    double trainValue = trainM.getEntryByIndex(index, recipe_index);
-                    double error = trainValue - (MatrixUtil.vectorMultiplication(latentVector, pairLatent)/10);
-                    //calculate error times pair latent
-                    double[] errorTimesPair = MatrixUtil.scalarMultiplication(error, pairLatent);
-                    //calculate vector result from current observable pair
-                    double[] currVector = MatrixUtil.vectorCalculation(
-                            errorTimesPair, 
-                            lambdaTarget, 
-                            0);
-                    res = MatrixUtil.vectorCalculation(res, currVector, 1);
-                }
-                res = MatrixUtil.vectorCalculation(res, lambdaTarget, 0);
-                break;
-            case RECIPES:
-                filtered = observable.stream().filter(p -> p.getRecipe().equals(targetId)).collect(Collectors.toList());
-                //calculate lambda times targeted latent vector
-                lambdaTarget = MatrixUtil.scalarMultiplication(LAMBDA, latentVector);
-                for (int i = 0; i < filtered.size(); i++) {
-                    int user_index = userMap.get(filtered.get(i).getUser());
-                    double[] pairLatent = fm.getFactorByIndex(user_index);
-                    double trainValue = trainM.getEntryByIndex(user_index, index);
-                    double error = trainValue - (MatrixUtil.vectorMultiplication(latentVector, pairLatent)/10);
-                    //calculate error times pair latent
-                    double[] errorTimesPair = MatrixUtil.scalarMultiplication(error, pairLatent);
-                    //calculate vector result from current observable pair
-                    double[] currVector = MatrixUtil.vectorCalculation(
-                            errorTimesPair, 
-                            lambdaTarget, 
-                            0);
-                    res = MatrixUtil.vectorCalculation(res, currVector, 1);
-                }
-                res = MatrixUtil.vectorCalculation(res, lambdaTarget, 0);
-                break;
-            case INGREDIENTS:
-                break;
-            default:
-                break;
-        }
-        //calculate result * learning rate
-        res = MatrixUtil.scalarMultiplication(LEARNING_RATE, res);
-        return res;
-    }
-    
-    public double rmse(Dataset d){ //double[][] prediction and TestMatrix
-        System.out.println("bee boop dipslaying rmse process");
-        List<Pair> testPair = d.getTestPair();
-        double squaredError = 0.0;
-        for (int i = 0; i < testPair.size(); i++) {
-            Pair curr = testPair.get(i);
-            int userIndex = this.userMap.get(curr.getUser());
-            int recipeIndex = this.recipeMap.get(curr.getRecipe());
-            double predicted = this.modelRes[userIndex][recipeIndex] / 10; //divide by ten because latent length = 2, max entry value = 5, thus 5*2
-            double actual = this.testM.getEntryByIndex(userIndex, recipeIndex);
-            System.out.println(String.format("%d. Predicted = %.2f, Actual = %.2f", (i+1), predicted, actual));
-            if(actual < 1) throw new RuntimeException("Missing value in test matrix");
-            squaredError += Math.pow((predicted-actual),2);
-        }
-        return Math.sqrt(squaredError/(double) testPair.size());
-    }
-    
-    public String[] topTenRecipe(){
-        int userIndex = this.userMap.get(this.chosenUserId);
-        List<RecipePredicted> l = new ArrayList<RecipePredicted>();
-        for (int i = 0; i < modelRes[userIndex].length; i++) {
-            l.add(new RecipePredicted(modelRes[userIndex][i],i));
-        }
-        Collections.sort(l);
-        String[] res = new String[10];
-        for (int i = 0; i < 10; i++) {
-            RecipePredicted curr = l.get(i);
-            String temp = "# "+(i+1)+". "+this.recipes.get(curr.getIndex()).getName() 
-                    +" ("+String.format("%.2f",curr.getValue()/10)+")";
-            
-            res[i] = temp;
-        }
-        return res;
-    }
-    
     //creating the first method of factorization (w_o ing   redients matrix)
     @Override
     public void run() {
@@ -280,6 +140,14 @@ public class Factorization implements Runnable {
             this.mdc.insertLog("Error: Failed to read dataset: dataset_readable_java.csv\n");
             return;
         } else this.mdc.insertLog("Success loading the dataset\n");
+        
+        //set attribute
+        this.trainPair = d.getTrainPair();
+        this.userMap = d.getUserMap();
+        this.recipeMap = d.getRecipeMap();
+        this.userMap_r = d.getReverseUserMap();
+        this.recipeMap_r = d.getReverseRecipeMap();
+        FactorizationUtil utils = new FactorizationUtil(this.ingredients.size());
         
         this.mdc.insertLog("#2 Splitting Dataset\n");
         //2. Split Dataset
@@ -304,12 +172,25 @@ public class Factorization implements Runnable {
         //3. Initialize Matrix Factor  
         boolean stg3 = false;
         FactorMatrix userFactor = null;
+        FactorMatrix userFactor_2 = null;
         FactorMatrix recipeFactor = null;
+        FactorMatrix ingredientFactor = null;
+        FactorMatrix recipeIngredientsMap = null;
         try{
             // user factor = m x f
-            userFactor = new FactorMatrix(this.trainM.getRowLength(),this.LATENT_SIZE,FactorType.USER);
+            userFactor = new FactorMatrix(this.trainM.getRowLength(),utils.getLatentSize(),FactorType.USER);
             // recipe factor = n x f
-            recipeFactor = new FactorMatrix(this.trainM.getColLength(),this.LATENT_SIZE,FactorType.RECIPES);   
+            recipeFactor = new FactorMatrix(this.trainM.getColLength(),utils.getLatentSize(),FactorType.RECIPES);   
+            // ingredient factor = o x f
+            ingredientFactor = new FactorMatrix(this.ingredients.size(),utils.getLatentSize(),FactorType.INGREDIENTS);
+            // recipe x ingredient map matrix = n x o (mask matrix 1/0)
+            recipeIngredientsMap = new FactorMatrix(this.trainM.getColLength(),
+                    this.ingredients.size(),
+                    FactorType.RECIPE_ING_MAP, 
+                    this.recipes, 
+                    this.recipeMap,
+                    this.ingredientMap);
+            userFactor_2 = new FactorMatrix(userFactor);
             stg3 = true;
         } catch (Exception e){
             e.printStackTrace();
@@ -321,13 +202,6 @@ public class Factorization implements Runnable {
             }
         }
         
-        //set attribute
-        this.trainPair = d.getTrainPair();
-        this.userMap = d.getUserMap();
-        this.recipeMap = d.getRecipeMap();
-        this.userMap_r = d.getReverseUserMap();
-        this.recipeMap_r = d.getReverseRecipeMap();
-        
         this.mdc.insertLog("#4 Entering Optimization Loop process\n"
                 + "#######\n"
                 + "# Process Detail:\n"
@@ -336,23 +210,34 @@ public class Factorization implements Runnable {
         );
         //4. entering loop  
         //loop a thousand time or break if objective value less than MIN_OBJECTIVE_VAL
-        boolean stg4 = false;
+        boolean stg4 = false;        
         try{
             int loop = MAX_LOOP;
             while(loop-->0){
-//                if(loop<=750) LEARNING_RATE /= 10;
-//                else if(loop<=500) LEARNING_RATE /= 10;
-//                else if(loop<=250) LEARNING_RATE /= 10;
                 System.out.println("loop: "+(1000-loop));
-                double objectiveValue = objectiveFunction(userFactor,recipeFactor);
+                double objectiveValue = utils.objectiveFunction_m1(
+                        userFactor,
+                        recipeFactor,
+                        this.trainM,
+                        this.trainPair,
+                        this.userMap,
+                        this.recipeMap
+                );
                 System.out.println(objectiveValue);
-//                this.mdc.insertLog("Iteration number: "+(1000-loop)+"\n");
-//                this.mdc.insertLog(String.format("Objective Function Value = %.2f\n",objectiveValue));
                 if(objectiveValue <= MIN_OBJECTIVE_VAL) break;
                 else if(Double.isNaN(objectiveValue)) throw new RuntimeException("Objective Function value is NaN");
                 else{
                     //do A-GD
-                    alternatingGradientDescent(userFactor,recipeFactor);
+                    utils.alternatingGradientDescent_m1(
+                            userFactor,
+                            recipeFactor,
+                            this.trainPair,
+                            this.userMap,
+                            this.recipeMap,
+                            this.userMap_r,
+                            this.recipeMap_r,
+                            this.trainM
+                    );
                 }   
             }
             stg4 = true;
@@ -390,8 +275,19 @@ public class Factorization implements Runnable {
         } 
         
         
-        double rmse = rmse(d);
-        String[] top10 = topTenRecipe();
+        double rmse = utils.rmse(
+                d.getTestPair(),
+                this.userMap,
+                this.recipeMap,
+                this.modelRes,
+                this.testM
+        );
+        String[] top10 = utils.topTenRecipe(
+                this.recipes,
+                this.userMap,
+                this.modelRes,
+                this.chosenUserId
+        );
         String str = String.join("\n",top10);
         
         this.mdc.insertLog("Result:\n"+String.format("# RMSE = %.3f\n",rmse));
@@ -399,8 +295,34 @@ public class Factorization implements Runnable {
                 + "# Top 10 Recipe Recommendation: \n"
                 + str +"\n");
         this.mdc.insertLog("\nFactorization Done.");
-        
+            
     }   
+    
+    
+ 
+        
+        /*
+        EXPERIMENT: implementing executor task
+        
+        int coreCount = Runtime.getRuntime().availableProcessors();
+        ExecutorService executor = Executors.newFixedThreadPool(coreCount);
+        
+        //method 1 - task 1
+        
+        
+        EXPERIMENT complete
+        */
+    
+//    class Method1 implements Callable<double[][]> {
+//        public Method1(){
+//            
+//        }
+//        
+//        @Override
+//        public double[][] call() throws Exception{
+//            
+//        }
+//    }
     
     public double[][] getModel(){return this.modelRes;}
 }

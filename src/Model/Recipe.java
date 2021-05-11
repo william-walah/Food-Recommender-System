@@ -20,10 +20,10 @@ public class Recipe {
     private SimpleStringProperty userRating;
     private Ingredient i;
 
-    public Recipe(String id, String name, String ingreList) {
-        this.id = id;
-        this.name = new SimpleStringProperty(name);
-        this.i = new Ingredient(ingreList);
+    public Recipe(String... data) {
+        this.id = data[0];
+        this.name = new SimpleStringProperty(data[1]);
+        this.i = new Ingredient(data[2],data[3]);
         this.userRating = new SimpleStringProperty("0");
     }
 
@@ -54,5 +54,9 @@ public class Recipe {
         }
         res = res.substring(0,res.length()-2);
         return res;
+    }
+    
+    public Ingredient getIngredientObject() {
+        return this.i;
     }
 }

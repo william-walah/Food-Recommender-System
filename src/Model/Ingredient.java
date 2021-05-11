@@ -6,6 +6,7 @@
 package Model;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -15,12 +16,20 @@ import java.util.List;
 public class Ingredient {
 
     private List<String> ingredients;
+    private List<String> ingredientsId;
+    private HashMap<String, String> ingredientMap;
 
-    public Ingredient(String input) {
+    public Ingredient(String input, String id) {
         this.ingredients = new ArrayList<String>();
-        String[] ingreList = input.split(",");
-        for (String x : ingreList) {
-            this.ingredients.add(x);
+        this.ingredientsId = new ArrayList<String>();
+        this.ingredientMap = new HashMap<String, String>();
+        String[] ingreList = input.split("_");
+        String[] ingreIdList = id.split(",");
+        if(ingreList.length != ingreIdList.length) throw new RuntimeException("Error Missmatch ID length and Ingredient Length when parsing data");
+        for (int i = 0; i < ingreIdList.length; i++) {
+            this.ingredients.add(ingreList[i]);
+            this.ingredientsId.add(ingreIdList[i]);
+            this.ingredientMap.put(ingreList[i], ingreIdList[i]);
         }
     }
 
@@ -34,5 +43,13 @@ public class Ingredient {
             res += i;
         }
         return res;
+    }
+    
+    public List<String> getIngredientIds() {
+        return this.ingredientsId;
+    }
+    
+    public HashMap<String,String> getIngredientMap() {
+        return this.ingredientMap;
     }
 }

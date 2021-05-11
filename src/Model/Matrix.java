@@ -32,18 +32,17 @@ abstract class Matrix {
         return result;
     }
     
-    public double[][] add(double[][] o){
+    public void add(double[][] o){
         if(this.entry.length != o.length) throw new RuntimeException("Addition Error: row length not match");
         else if(this.entry[0].length != o[0].length) throw new RuntimeException("Addition Error: col length not match");
         
-        double[][] result = new double[this.entry.length][this.entry[0].length];
-        for (int i = 0; i < result.length; i++) {
-            for (int j = 0; j < result[i].length; j++) {
-                result[i][j] = this.entry[i][j] + o[i][j];
+        //double[][] result = new double[this.entry.length][this.entry[0].length];
+        for (int i = 0; i < this.entry.length; i++) {
+            for (int j = 0; j < this.entry[i].length; j++) {
+                this.entry[i][j] = this.entry[i][j] + o[i][j];
             }
         }
-        
-        return result;
+        //return result;
     }
     
     public double[][] subtract(double[][] o){
@@ -76,6 +75,16 @@ abstract class Matrix {
         }
         
         return result;
+    }
+    
+    public double frobeniusNorm(){
+        double sumSq = 0.0;
+        for (int i = 0; i < entry.length; i++) {
+            for (int j = 0; j < entry[i].length; j++) {
+                sumSq += Math.pow(entry[i][j],2);
+            }
+        }
+        return Math.sqrt(sumSq);
     }
     
     // time-consuming process (500*500 = 250000 entry)
