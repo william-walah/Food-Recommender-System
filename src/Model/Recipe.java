@@ -59,4 +59,6 @@ public class Recipe {
     public Ingredient getIngredientObject() {
         return this.i;
     }
+    
+    public int getIngredientLength(){return this.i.length();}
 }

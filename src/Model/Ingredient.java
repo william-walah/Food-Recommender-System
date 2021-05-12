@@ -52,4 +52,6 @@ public class Ingredient {
     public HashMap<String,String> getIngredientMap() {
         return this.ingredientMap;
     }
+    
+    public int length(){return this.ingredients.size();}
 }
