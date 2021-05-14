@@ -17,13 +17,17 @@ import java.util.stream.Collectors;
  */
 public class FactorizationUtil {
 
-    private final int LATENT_SIZE = 2;
-    private final double TRUNCATION_VAL = LATENT_SIZE * 5;
-    private final double LAMBDA = 1;
-    private final double LEARNING_RATE = 0.0001;
+    private final int LATENT_SIZE;
+    private final double TRUNCATION_VAL;
+    private final double LAMBDA;
+    private final double LEARNING_RATE;
 
-    public FactorizationUtil() {
+    public FactorizationUtil(int latentSize, double lambda, double learningRate) {
         //do nothing
+        this.LATENT_SIZE = latentSize;
+        this.TRUNCATION_VAL = LATENT_SIZE * 5;
+        this.LAMBDA = lambda;
+        this.LEARNING_RATE = learningRate;
     }
 
     public double objectiveFunction_m1(
@@ -384,28 +388,30 @@ public class FactorizationUtil {
         return Math.sqrt(squaredError / (double) testPair.size());
     }
 
-    public String[] topTenRecipe(
-            List<Recipe> recipes,
-            HashMap<String, Integer> userMap,
-            double[][] modelRes,
-            String chosenUserId
-    ) {
-        int userIndex = userMap.get(chosenUserId);
-        List<RecipePredicted> l = new ArrayList<RecipePredicted>();
-        for (int i = 0; i < modelRes[userIndex].length; i++) {
-            l.add(new RecipePredicted(modelRes[userIndex][i], i));
-        }
-        Collections.sort(l);
-        String[] res = new String[10];
-        for (int i = 0; i < 10; i++) {
-            RecipePredicted curr = l.get(i);
-            String temp = "# " + (i + 1) + ". " + recipes.get(curr.getIndex()).getName()
-                    + " (" + String.format("%.2f", curr.getValue() / TRUNCATION_VAL) + ")";
-
-            res[i] = temp;
-        }
-        return res;
-    }
+//    public String[] topTenRecipe(
+//            List<Recipe> recipes,
+//            HashMap<String, Integer> userMap,
+//            double[][] modelRes,
+//            String chosenUserId,
+//            int method
+//    ) { 
+//        int userIndex = userMap.get(chosenUserId);
+//        List<RecipePredicted> l = new ArrayList<RecipePredicted>();
+//        for (int i = 0; i < modelRes[userIndex].length; i++) {
+//            l.add(new RecipePredicted(modelRes[userIndex][i], i));
+//        }
+//        Collections.sort(l);
+//        String[] res = new String[10];
+//        for (int i = 0; i < 10; i++) {
+//            RecipePredicted curr = l.get(i);
+//            double prediction = method == 0 ? (curr.getValue() / TRUNCATION_VAL) : (curr.getValue() / (TRUNCATION_VAL*recipes.get(curr.getIndex()).getIngredientLength()));
+//            String temp = "# " + (i + 1) + ". " + recipes.get(curr.getIndex()).getName()
+//                    + " (" + String.format("%.2f", prediction) + ")";
+//
+//            res[i] = temp;
+//        }
+//        return res;
+//    }
 
     public int getLatentSize() {
         return LATENT_SIZE;

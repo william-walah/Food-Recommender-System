@@ -46,7 +46,7 @@ public class Recipe {
     public void setUserRating(String s){
         this.userRating.set(s);
     }
-
+    
     public String getIngredient() {
         String res = "";
         for (String i : this.i.getIngredients()) {

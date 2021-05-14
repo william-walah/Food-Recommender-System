@@ -43,12 +43,14 @@ public class Factorization implements Runnable {
     private List<Recipe> recipes;
     private List<User> users;
     private List<String> ingredients;
-    private String chosenUserId;
+    //private String chosenUserId;
     private MainDocumentController mdc;
     private TrainMatrix trainM;
     private TestMatrix testM;
-    private double[][] modelRes;
-    private final int MAX_LOOP = 1000;
+    private Dataset d;
+    private FactorizationUtil utils;
+//    private double[][] modelRes;
+    private int MAX_LOOP;
     private final double MIN_OBJECTIVE_VAL = 10.0;
 
     //
@@ -59,9 +61,12 @@ public class Factorization implements Runnable {
     private HashMap<Integer, String> userMap_r;   //memetakan index matrix / list user dengan ID user
     private HashMap<Integer, String> recipeMap_r; //memetakan index matriks / list resep dengan ID resep
     private HashMap<Integer, String> ingredientMap_r;
+    private List<double[][]> result;
+    private int learningType; //fixed or iteratively change to 1/t
 
     public Factorization(MainDocumentController c) {
         this.recipes = new ArrayList<Recipe>();
+        this.result = new ArrayList<double[][]>();
         this.users = new ArrayList<User>();
         this.ingredients = new ArrayList<String>();
         this.ingredientMap = new HashMap<String, Integer>();
@@ -132,17 +137,28 @@ public class Factorization implements Runnable {
         return this.users;
     }
 
-    public void setUserId(String s) {
-        chosenUserId = s;
+//    public void setUserId(String s) {
+//        chosenUserId = s;
+//    }
+    
+    public void setParameter(String... data){
+        this.utils = new FactorizationUtil(
+           Integer.parseInt(data[0]),
+           Double.parseDouble(data[2]),
+           Double.parseDouble(data[3])
+        );
+        this.MAX_LOOP = Integer.parseInt(data[1]);
+        this.learningType = data[4].equals("Fixed") ? 0 : 1;
     }
 
     //creating the first method of factorization (w_o ing   redients matrix)
     @Override
     public void run() {
         this.mdc.insertLog("Starting factorization process \n#1 Reading Dataset\n");
-        Dataset d = new Dataset(this.recipes, this.users);
+        //first time Dataset d initialization
+        this.d = new Dataset(this.recipes, this.users);
         //1. Read Dataset
-        boolean succesReadDataset = d.read();
+        boolean succesReadDataset = this.d.read();
         if (!succesReadDataset) {
             this.mdc.insertLog("Error: Failed to read dataset: dataset_readable_java.csv\n");
             return;
@@ -151,18 +167,18 @@ public class Factorization implements Runnable {
         }
 
         //set attribute
-        this.trainPair = d.getTrainPair();
-        this.userMap = d.getUserMap();
-        this.recipeMap = d.getRecipeMap();
-        this.userMap_r = d.getReverseUserMap();
-        this.recipeMap_r = d.getReverseRecipeMap();
-        FactorizationUtil utils = new FactorizationUtil();
+        this.trainPair = this.d.getTrainPair();
+        this.userMap = this.d.getUserMap();
+        this.recipeMap = this.d.getRecipeMap();
+        this.userMap_r = this.d.getReverseUserMap();
+        this.recipeMap_r = this.d.getReverseRecipeMap();
+        //FactorizationUtil utils = new FactorizationUtil();
 
         this.mdc.insertLog("#2 Splitting Dataset\n");
         //2. Split Dataset
         boolean stg2 = false;
         try {
-            List<Object> split_mat = d.split();
+            List<Object> split_mat = this.d.split();
             this.trainM = (TrainMatrix) split_mat.remove(0);
             this.testM = (TestMatrix) split_mat.remove(0);
             stg2 = true;
@@ -221,11 +237,13 @@ public class Factorization implements Runnable {
         );
         //4. entering loop  
         //loop a thousand time or break if objective value less than MIN_OBJECTIVE_VAL
-        boolean stg4_1 = false;        
+        boolean stg4_1 = false;
+        long start = System.currentTimeMillis();     
+        double objFuncPrev_1 = 0.0;       
         try{
             int loop = MAX_LOOP;
             while(loop-->0){
-                if(loop%250==0) System.out.println("loop: "+(1000-loop));
+                if(loop%250==0) System.out.println("loop: "+(MAX_LOOP-loop));
                 double objectiveValue = utils.objectiveFunction_m1(
                         userFactor,
                         recipeFactor,
@@ -236,6 +254,9 @@ public class Factorization implements Runnable {
                 );
                 //System.out.println(objectiveValue);
                 if(objectiveValue <= MIN_OBJECTIVE_VAL) break;
+                else if (Math.abs(objFuncPrev_1 - objectiveValue) <= 0.00001) {
+                    break;
+                }
                 else if(Double.isNaN(objectiveValue)) throw new RuntimeException("Objective Function value is NaN");
                 else{
                     //do A-GD
@@ -262,7 +283,9 @@ public class Factorization implements Runnable {
                 return;
             }
         }
-
+        long elapsedTime_1 = System.currentTimeMillis() - start;
+        
+        start = System.currentTimeMillis(); 
         this.mdc.insertLog("#######\n"
                 + "# Process No. 2 Detail:\n"
                 + "# Max Number of iteration: " + MAX_LOOP + "\n"
@@ -275,7 +298,7 @@ public class Factorization implements Runnable {
             int loop = MAX_LOOP;
             while (loop-- > 0) {
                 //if(loop%250==0) System.out.println("loop: "+(1000-loop));
-                System.out.println("loop: " + (1000 - loop));
+                System.out.println("loop: " + (MAX_LOOP - loop));
                 double[][] currPrediction = MatrixUtil.multiplyWithTransposing(
                         userFactor_2.getEntry(),
                         recipeIngredientsMap.mulitply(
@@ -293,7 +316,6 @@ public class Factorization implements Runnable {
                         this.userMap,
                         this.recipeMap
                 );
-                System.out.printf("%.3f\n", objectiveValue);
                 if (objectiveValue <= MIN_OBJECTIVE_VAL) {
                     break;
                 } else if (Math.abs(objFuncPrev_2 - objectiveValue) <= 0.00001) {
@@ -330,7 +352,7 @@ public class Factorization implements Runnable {
                 return;
             }
         }
-
+        long elapsedTime_2 = System.currentTimeMillis() - start;
         //check model result
 //        this.modelRes = userFactor.mulitply(recipeFactor.transpose());
 //        List<String[]> matrix_csv = new ArrayList<String[]>();
@@ -352,7 +374,7 @@ public class Factorization implements Runnable {
 //        } catch(Exception e) {
 //            e.printStackTrace();
 //        } 
-        //double[][] model1 = userFactor.mulitply(recipeFactor.transpose());
+        double[][] model1 = userFactor.mulitply(recipeFactor.transpose());
         double[][] model2 = MatrixUtil.multiplyWithTransposing(
                 userFactor_2.getEntry(),
                 recipeIngredientsMap.mulitply(
@@ -360,16 +382,20 @@ public class Factorization implements Runnable {
                 ),
                 false);
 
-//        double rmse_1 = utils.rmse(
-//                d.getTestPair(),
-//                this.userMap,
-//                this.recipeMap,
-//                model1,
-//                this.testM,
-//                0
-//        );
+        this.result.add(model1);
+        this.result.add(model2);
+        
+        double rmse_1 = utils.rmse(
+                this.d.getTestPair(),
+                this.recipes,
+                this.userMap,
+                this.recipeMap,
+                model1,
+                this.testM,
+                0
+        );
         double rmse_2 = utils.rmse(
-                d.getTestPair(),
+                this.d.getTestPair(),
                 this.recipes,
                 this.userMap,
                 this.recipeMap,
@@ -377,63 +403,71 @@ public class Factorization implements Runnable {
                 this.testM,
                 1
         );
+        
 //        String[] top10_1 = utils.topTenRecipe(
 //                this.recipes,
 //                this.userMap,
 //                model1,
-//                this.chosenUserId
+//                this.chosenUserId,
+//                0
 //        );
-        String[] top10_2 = utils.topTenRecipe(
-                this.recipes,
-                this.userMap,
-                model2,
-                this.chosenUserId
-        );
-
-        //String str_1 = String.join("\n",top10_1);
-        String str_2 = String.join("\n", top10_2);
+//        String[] top10_2 = utils.topTenRecipe(
+//                this.recipes,
+//                this.userMap,
+//                model2,
+//                this.chosenUserId,
+//                1
+//        );
+//
+//        String str_1 = String.join("\n",top10_1);
+//        String str_2 = String.join("\n", top10_2);
 
         this.mdc.insertLog("Result:\n"
                 + "############################\n"
-                //                + "# FIRST OPTIMIZATION METHOD\n"
-                //                + String.format("# RMSE = %.3f\n",rmse_1)
-                //                + "# User ID: "+this.chosenUserId+"\n"
-                //                + "# Top 10 Recipe Recommendation: \n"
-                //                + str_1 +"\n"
-                //                + "############################\n"
-                //                + "############################\n"
+                + "# FIRST OPTIMIZATION METHOD\n"
+                + String.format("# RMSE = %.3f\n",rmse_1)
+                + String.format("# Elapsed Time: %.3f\n", elapsedTime_1/1000F)
+                //+ "# User ID: "+this.chosenUserId+"\n"
+                //+ "# Top 10 Recipe Recommendation: \n"
+                //+ str_1 +"\n"   
+                + "############################\n"
+                + "############################\n"
                 + "# SECOND OPTIMIZATION METHOD\n"
                 + String.format("# RMSE = %.3f\n", rmse_2)
-                + "# User ID: " + this.chosenUserId + "\n"
-                + "# Top 10 Recipe Recommendation: \n"
-                + str_2 + "\n"
+                + String.format("# Elapsed Time: %.3f", elapsedTime_2/1000F)
+                //+ "# User ID: " + this.chosenUserId + "\n"
+                //+ "# Top 10 Recipe Recommendation: \n"
+                //+ str_2 + "\n"
                 + "############################\n");
-        this.mdc.insertLog("\nFactorization Done.");
-
+        this.mdc.insertLog("\nFactorization Done.");    
+        this.mdc.afterFactorization();
     }
-
-    /*
-        EXPERIMENT: implementing executor task
-        
-        int coreCount = Runtime.getRuntime().availableProcessors();
-        ExecutorService executor = Executors.newFixedThreadPool(coreCount);
-        
-        //method 1 - task 1
-        
-        
-        EXPERIMENT complete
-     */
-//    class Method1 implements Callable<double[][]> {
-//        public Method1(){
-//            
-//        }
-//        
-//        @Override
-//        public double[][] call() throws Exception{
-//            
-//        }
-//    }
-    public double[][] getModel() {
-        return this.modelRes;
+    
+    public double[][] getModel(int model) {
+        //int model = 0 | 1
+        return this.result.get(model);
+    }
+    
+    public List<RecipePredicted> getUserPrediction(String userId){
+        int userIndex = this.userMap.get(userId);
+        List<RecipePredicted> result = new ArrayList<RecipePredicted>();
+        try{
+            System.out.println(this.result.size());
+            double[][] firstMethodResult = this.result.get(0);
+            double[][] secondMethodResult = this.result.get(1);
+            for (Recipe curr: this.recipes) {
+                int recipeIndex = this.recipeMap.get(curr.getId());
+                result.add(new RecipePredicted(
+                        curr.getName(),
+                        String.format("%.2f",this.d.getEntryByIndex(userIndex, recipeIndex)),
+                        String.format("%.2f",firstMethodResult[userIndex][recipeIndex]/(utils.getLatentSize()*5)),
+                        String.format("%.2f",secondMethodResult[userIndex][recipeIndex]/(utils.getLatentSize()*5*curr.getIngredientLength()))
+                ));
+            }
+        } catch(Exception e){
+            e.printStackTrace();
+        } finally {
+            return result;   
+        }
     }
 }

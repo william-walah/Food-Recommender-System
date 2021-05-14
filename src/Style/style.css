@@ -5,3 +5,11 @@
 .logging_field{
     -fx-padding: 5 5 5 5;   
 }
+
+.actual_rate.table-cell{
+    -fx-text-fill: #0eab28;
+}
+
+.predicted_rate.table-cell{
+    -fx-text-fill: #ab280e;
+}
