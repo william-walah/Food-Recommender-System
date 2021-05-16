@@ -9,6 +9,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -53,9 +55,11 @@ public class Dataset extends Matrix {
     public boolean read(){
         boolean success = false;
         try {
-            File file = new File("src/data/dataset_readable_java.csv");
-            FileReader fr = new FileReader(file);
-            BufferedReader br = new BufferedReader(fr);
+//            File file = new File((this.getClass().getResource("data/dataset_readable_java.csv")).toURI());
+//            FileReader fr = new FileReader(file);
+//            BufferedReader br = new BufferedReader(fr);
+            InputStream in = getClass().getResourceAsStream("data/dataset_readable_java.csv");
+            BufferedReader br = new BufferedReader(new InputStreamReader(in));
             String line = "";
             String[] tempArr;
             while((line = br.readLine()) != null) {

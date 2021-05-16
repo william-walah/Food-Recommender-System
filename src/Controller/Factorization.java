@@ -22,6 +22,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -82,9 +84,13 @@ public class Factorization implements Runnable {
     public boolean readRecipesData() {
         boolean success = false;
         try {
-            File file = new File("src/data/dataset_recipes_ingredient_list_readable_java.csv");
-            FileReader fr = new FileReader(file);
-            BufferedReader br = new BufferedReader(fr);
+            //this method only works in java IDE
+            //File file = new File("./data/dataset_recipes_ingredient_list_readable_java.csv");
+            //FileReader fr = new FileReader(fr);
+            //BufferedReader br = new BufferedReader(fr);
+            //to be usable in jar, look below. Thanks: https://stackoverflow.com/questions/20389255/reading-a-resource-file-from-within-jar
+            InputStream in = getClass().getResourceAsStream("/data/dataset_recipes_ingredient_list_readable_java.csv");
+            BufferedReader br = new BufferedReader(new InputStreamReader(in));
             String line = "";
             String[] tempArr;
             Set<String> ingredientsUniqueId = new HashSet<String>();
@@ -102,7 +108,7 @@ public class Factorization implements Runnable {
                 index++;
             }
             success = true;
-        } catch (IOException ioe) {
+        } catch (Exception ioe) {
             ioe.printStackTrace();
             System.exit(1);
         } finally {
@@ -113,16 +119,18 @@ public class Factorization implements Runnable {
     public boolean readUsersData() {
         boolean success = false;
         try {
-            File file = new File("src/data/dataset_userId_list.csv");
-            FileReader fr = new FileReader(file);
-            BufferedReader br = new BufferedReader(fr);
+            //File file = new File("./data/dataset_userId_list.csv");
+            //FileReader fr = new FileReader(file);
+            //BufferedReader br = new BufferedReader(fr);
+            InputStream in = getClass().getResourceAsStream("/data/dataset_userId_list.csv");
+            BufferedReader br = new BufferedReader(new InputStreamReader(in));
             String line = "";
             while ((line = br.readLine()) != null) {
                 this.users.add(new User(line));
             }
             br.close();
             success = true;
-        } catch (IOException ioe) {
+        } catch (Exception ioe) {
             ioe.printStackTrace();
         } finally {
             return success;

@@ -116,13 +116,13 @@
                   </AnchorPane>
             </content>
           </Tab>
-          <Tab fx:id="custom_recom_tab" disable="true" text="View Your Recommendation">
+          <Tab fx:id="custom_recom_tab" text="View Your Recommendation">
             <content>
               <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                      <children>
                         <StackPane layoutX="37.0" layoutY="45.0" prefHeight="441.0" prefWidth="603.0">
                            <children>
-                              <TableView fx:id="recipes_table" prefHeight="444.0" prefWidth="606.0">
+                              <TableView fx:id="recipes_table" editable="true" prefHeight="444.0" prefWidth="606.0">
                                 <columns>
                                   <TableColumn fx:id="recipeCol" prefWidth="139.0" text="Recipes" />
                                   <TableColumn fx:id="ingredientsCol" prefWidth="377.0" text="Ingredients" />
@@ -131,6 +131,20 @@
                               </TableView>
                            </children>
                         </StackPane>
+                        <Button fx:id="validate_rating" layoutX="470.0" layoutY="511.0" mnemonicParsing="false" onAction="#validateCustomRating" prefHeight="31.0" prefWidth="170.0" text="Recommend Me!" textFill="#0e540a">
+                           <font>
+                              <Font name="Arial Bold" size="15.0" />
+                           </font></Button>
+                        <Button layoutX="37.0" layoutY="511.0" mnemonicParsing="false" onAction="#saveCustomRating" prefHeight="31.0" prefWidth="170.0" text="Save to CSV" textFill="#080d5b">
+                           <font>
+                              <Font name="Arial Bold" size="15.0" />
+                           </font>
+                        </Button>
+                        <Button layoutX="254.0" layoutY="511.0" mnemonicParsing="false" onAction="#loadCustomRating" prefHeight="31.0" prefWidth="170.0" text="Load Rating Data" textFill="#5b0909">
+                           <font>
+                              <Font name="Arial Bold" size="15.0" />
+                           </font>
+                        </Button>
                      </children></AnchorPane>
             </content>
           </Tab>

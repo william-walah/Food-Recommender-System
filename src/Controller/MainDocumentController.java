@@ -8,10 +8,21 @@ package Controller;
 import Model.Recipe;
 import Model.RecipePredicted;
 import Model.User;
+import com.opencsv.CSVReader;
+import com.opencsv.CSVWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.Reader;
 import java.net.URL;
+import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.function.UnaryOperator;
+import java.util.regex.Pattern;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -23,11 +34,14 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TabPane;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableColumn.CellEditEvent;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
@@ -36,6 +50,9 @@ import javafx.scene.control.TextFormatter.Change;
 import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.cell.TextFieldTableCell;
+import javafx.stage.FileChooser;
+import javafx.stage.Window;
 import javafx.util.Callback;
 import javafx.util.converter.IntegerStringConverter;
 
@@ -220,20 +237,136 @@ public class MainDocumentController implements Initializable {
         
     }
 
+    @FXML
+    private void validateCustomRating(ActionEvent event) {
+        Pattern zero = Pattern.compile("[0-5](\\.(00|0))?"); //filter non zero
+        ObservableList<Recipe> customeRating = this.recipes_table.getItems();
+        for(Recipe curr: customeRating){
+            if(zero.matcher(curr.getUserRating()).matches()){
+                //do nothing
+            } else {
+                System.out.printf("%s: %.2f",curr.getName(),Double.parseDouble(curr.getUserRating()));
+            }
+        }
+    }
+    
+    @FXML
+    private void loadCustomRating(ActionEvent event) {
+        FileChooser fileChooser = new FileChooser();
+
+        //Set extension filter for text files
+        FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("Comma-Sepparated Files (*.csv)", "*.csv");
+                fileChooser.getExtensionFilters().add(extFilter);
+
+        //Show save file dialog
+        Node source = (Node) event.getSource();
+        Window theStage = source.getScene().getWindow();
+        File file = fileChooser.showOpenDialog(theStage);
+        
+        if(file != null){
+            this.recipes_table.setDisable(!this.recipes_table.isDisable());
+            Thread t = new Thread(){
+                @Override
+                public void run(){
+                    try{
+                        Thread.sleep(3000);
+                        CSVReader csvReader = new CSVReader(new FileReader(file));
+                        HashMap<String,String> data = new HashMap<String,String>();
+                        String[] line;
+                        while ((line = csvReader.readNext()) != null) {
+                            data.put(line[0],line[1]); //id,rating
+                        }
+                        csvReader.close();
+                        if(data.size()>0){
+                            ObservableList<Recipe> customeRating = recipes_table.getItems();
+                            for(Recipe curr: customeRating){
+                                String id = curr.getId();
+                                curr.setUserRating(data.get(id));
+                            };
+                        }
+                    } catch(Exception e){
+                        e.printStackTrace();
+                    } finally{
+                        recipes_table.refresh();
+                        recipes_table.setDisable(!recipes_table.isDisable());
+                    }
+                }
+            };
+            t.start();
+        }
+    }
+
+    @FXML
+    private void saveCustomRating(ActionEvent event) {
+        FileChooser fileChooser = new FileChooser();
+
+        //Set extension filter for text files
+        FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("Comma-Sepparated Files (*.csv)", "*.csv");
+                fileChooser.getExtensionFilters().add(extFilter);
+
+        //Show save file dialog
+        Node source = (Node) event.getSource();
+        Window theStage = source.getScene().getWindow();
+        File file = fileChooser.showSaveDialog(theStage);
+
+        if (file != null) {
+            //do file save process
+            ObservableList<Recipe> customeRating = this.recipes_table.getItems();
+            List<String[]> dataCsv = new ArrayList<String[]>();
+            for(Recipe curr: customeRating){
+                String[] d = new String[2]; 
+                d[0] = curr.getId();
+                d[1] = curr.getUserRating();
+                dataCsv.add(d);
+            }
+            try{
+                CSVWriter writer = new CSVWriter(new FileWriter(file, false));
+                for (String[] s: dataCsv) {
+                    writer.writeNext(s);
+                }
+                writer.close();
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+            System.out.println("save success at: "+file.getAbsolutePath());
+        } else {
+            //do nothing
+        }
+    }
+        
+    
     private void initializeTable() {
-        // recipe table data
+        // custom user rating recipe table
         this.data_recipe = FXCollections.observableList(f.getRecipes());
         this.recipeCol.setCellValueFactory(
                 new PropertyValueFactory<Recipe, String>("name"));
         this.ingredientsCol.setCellValueFactory(cellData
                 -> new SimpleStringProperty(cellData.getValue().getIngredient())
         );
+        // editable column
         this.ratingCol.setCellValueFactory(
                 new PropertyValueFactory<Recipe, String>("userRating"));
+        
+        //this is the JavaFX docummentation from Oracle result (Simple editable String)
+        //needed one that can match a regex pattern for decimal number
+//        this.ratingCol.setCellFactory(TextFieldTableCell.forTableColumn(new IntegerStringConverter()));
+//        this.ratingCol.setOnEditCommit(
+//            new EventHandler<CellEditEvent<Recipe, String>>() {
+//                @Override
+//                public void handle(CellEditEvent<Recipe, String> t) {
+//                    ((Recipe) t.getTableView().getItems().get(
+//                            t.getTablePosition().getRow())
+//                            ).setUserRating(t.getNewValue());
+//                }
+//            }
+//        );
 
+        //again, thanks to the person from referable link on the RatingEditingCell inner class
+        this.ratingCol.setCellFactory(col -> new RatingEditingCell());
+        
         this.recipes_table.setItems(this.data_recipe);
 
-        // user id data
+        // user id table data
         this.data_user = FXCollections.observableList(f.getUsers());
         this.userId_col.setCellValueFactory(
                 new PropertyValueFactory<User, Integer>("id"));
@@ -318,5 +451,86 @@ public class MainDocumentController implements Initializable {
     public void afterFactorization(){
         this.recom_tab.setDisable(false);
         this.custom_recom_tab.setDisable(false);
+    }
+    
+    
+    //thanks to: https://stackoverflow.com/questions/27900344/how-to-make-a-table-column-with-integer-datatype-editable-without-changing-it-to
+    //for class TableCell<S,T> information
+    class RatingEditingCell extends TableCell<Recipe, String> {
+
+        private final TextField textField = new TextField();
+        //thanks to: https://forums.asp.net/t/1427365.aspx?regex+non+negative+decimal+with+at+least+4+decimal+places
+        //for giving information
+        private final Pattern decimalPattern = Pattern.compile("[0-5](\\.([0-9]{0,2}|00|0))?");
+
+        public RatingEditingCell() {
+            textField.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
+                if (! isNowFocused) {
+                    processEdit();
+                }
+            });
+            textField.setOnAction(event -> processEdit());
+        }
+
+        private void processEdit() {
+            String text = textField.getText();
+            if (decimalPattern.matcher(text).matches()) {
+                String[] number = text.split(".");
+                if(number.length != 0){ //single input like 5, 4, 3, 2, 1
+                    if(Integer.parseInt(number[0]) == 5 && Integer.parseInt(number[1])>0){
+                    // rating like 5.9 or something
+                    cancelEdit();
+                    } else {
+                        commitEdit(text);
+                    }
+                } else {
+                    commitEdit(text);
+                }
+                
+            } else {
+                cancelEdit();
+            }
+        }
+
+        @Override
+        public void updateItem(String value, boolean empty) {
+            super.updateItem(value, empty);
+            if (empty) {
+                setText(null);
+                setGraphic(null);
+            } else if (isEditing()) {
+                setText(null);
+                textField.setText(value);
+                setGraphic(textField);
+            } else {
+                setText(value);
+                setGraphic(null);
+            }
+        }
+
+        @Override
+        public void startEdit() {
+            super.startEdit();
+            String value = getItem();
+            if (value != null) {
+                textField.setText(value);
+                setGraphic(textField);
+                setText(null);
+            }
+        }
+
+        @Override
+        public void cancelEdit() {
+            super.cancelEdit();
+            setText(getItem().toString());
+            setGraphic(null);
+        }
+
+        // This seems necessary to persist the edit on loss of focus; not sure why:
+        @Override
+        public void commitEdit(String value) {
+            super.commitEdit(value);
+            ((Recipe)this.getTableRow().getItem()).setUserRating(value);
+        }
     }
 }
