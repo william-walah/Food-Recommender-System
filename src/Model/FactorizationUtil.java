@@ -20,7 +20,7 @@ public class FactorizationUtil {
     private final int LATENT_SIZE;
     private final double TRUNCATION_VAL;
     private final double LAMBDA;
-    private final double LEARNING_RATE;
+    private double LEARNING_RATE;
 
     public FactorizationUtil(int latentSize, double lambda, double learningRate) {
         //do nothing
@@ -29,6 +29,8 @@ public class FactorizationUtil {
         this.LAMBDA = lambda;
         this.LEARNING_RATE = learningRate;
     }
+    
+    public void setLearningRate(double lr){this.LEARNING_RATE = lr;}
 
     public double objectiveFunction_m1(
             FactorMatrix user,
@@ -39,13 +41,11 @@ public class FactorizationUtil {
             HashMap<String, Integer> recipeMap
     ) {
         double sumOfErrorSquared = 0.0;
-        for (int i = 0; i < trainPair.size(); i++) {
-            Pair curr = trainPair.get(i);
-            String[] p = curr.getPair();
-            int userIndex = userMap.get(p[0]);
-            int recipeIndex = recipeMap.get(p[1]);
-            double[] userFactor = user.getFactorByIndex(userIndex);
-            double[] recipeFactor = recipe.getFactorByIndex(recipeIndex);
+        for (Pair curr: trainPair) {
+            int userIndex = userMap.get(curr.getUser());
+            int recipeIndex = recipeMap.get(curr.getRecipe());
+            double[] userFactor = user.getFactorByIndex(userIndex); //reference
+            double[] recipeFactor = recipe.getFactorByIndex(recipeIndex); //reference
             double predicted = MatrixUtil.vectorMultiplication(userFactor, recipeFactor);
             //truncated value so it lays between 0-5
             //current latent factor length = 2
@@ -72,7 +72,7 @@ public class FactorizationUtil {
             TrainMatrix tm
     ) {
         //update the user matrix factor value
-        double[][] userVector = user.getEntry();
+        double[][] userVector = user.getEntry(); //reference
         for (int i = 0; i < userVector.length; i++) {
             double[] newLatent = MatrixUtil.vectorCalculation(
                     userVector[i], //previous value
@@ -149,8 +149,9 @@ public class FactorizationUtil {
                     double trainValue = trainM.getEntryByIndex(index, recipeIndex);
                     double error = trainValue - (MatrixUtil.vectorMultiplication(latentVector, pairLatent) / TRUNCATION_VAL);
                     //calculate error times pair latent
-                    double[] errorTimesPair = MatrixUtil.scalarMultiplication(error, pairLatent);
-                    res = MatrixUtil.vectorCalculation(res, errorTimesPair, 1);
+                    //double[] errorTimesPair = MatrixUtil.scalarMultiplication(error, pairLatent);
+                    //res = MatrixUtil.vectorCalculation(res, errorTimesPair, 1);
+                    res = MatrixUtil.vectorCalculation(res, pairLatent, 1, false, error);
                 }
                 res = MatrixUtil.vectorCalculation(res, lambdaTarget, 0);
                 break;
@@ -164,8 +165,9 @@ public class FactorizationUtil {
                     double trainValue = trainM.getEntryByIndex(user_index, index);
                     double error = trainValue - (MatrixUtil.vectorMultiplication(latentVector, pairLatent) / TRUNCATION_VAL);
                     //calculate error times pair latent
-                    double[] errorTimesPair = MatrixUtil.scalarMultiplication(error, pairLatent);
-                    res = MatrixUtil.vectorCalculation(res, errorTimesPair, 1);
+                    //double[] errorTimesPair = MatrixUtil.scalarMultiplication(error, pairLatent);
+                    //res = MatrixUtil.vectorCalculation(res, errorTimesPair, 1);
+                    res = MatrixUtil.vectorCalculation(res, pairLatent, 1, false, error);
                 }
                 res = MatrixUtil.vectorCalculation(res, lambdaTarget, 0);
                 break;
@@ -361,12 +363,10 @@ public class FactorizationUtil {
             List<Recipe> listOfRecipe,
             HashMap<String, Integer> userMap,
             HashMap<String, Integer> recipeMap,
-                double[][] modelRes,
-            TestMatrix testM,
+            double[][] modelRes,
+            double[][] matrixData,
             int method
-    ) { //double[][] prediction and TestMatrix
-        System.out.println("bee boop dipslaying rmse process");
-
+    ) { 
         double squaredError = 0.0;
         for (int i = 0; i < testPair.size(); i++) {
             Pair curr = testPair.get(i);
@@ -378,8 +378,7 @@ public class FactorizationUtil {
             } else { //method_2
                 predicted = modelRes[userIndex][recipeIndex] / (TRUNCATION_VAL* listOfRecipe.get(recipeIndex).getIngredientLength());
             }
-            double actual = testM.getEntryByIndex(userIndex, recipeIndex);
-            System.out.println(String.format("%d. Predicted = %.2f, Actual = %.2f", (i + 1), predicted, actual));
+            double actual = matrixData[userIndex][recipeIndex];
             if (actual < 1) {
                 throw new RuntimeException("Missing value in test matrix");
             }
@@ -387,31 +386,6 @@ public class FactorizationUtil {
         }
         return Math.sqrt(squaredError / (double) testPair.size());
     }
-
-//    public String[] topTenRecipe(
-//            List<Recipe> recipes,
-//            HashMap<String, Integer> userMap,
-//            double[][] modelRes,
-//            String chosenUserId,
-//            int method
-//    ) { 
-//        int userIndex = userMap.get(chosenUserId);
-//        List<RecipePredicted> l = new ArrayList<RecipePredicted>();
-//        for (int i = 0; i < modelRes[userIndex].length; i++) {
-//            l.add(new RecipePredicted(modelRes[userIndex][i], i));
-//        }
-//        Collections.sort(l);
-//        String[] res = new String[10];
-//        for (int i = 0; i < 10; i++) {
-//            RecipePredicted curr = l.get(i);
-//            double prediction = method == 0 ? (curr.getValue() / TRUNCATION_VAL) : (curr.getValue() / (TRUNCATION_VAL*recipes.get(curr.getIndex()).getIngredientLength()));
-//            String temp = "# " + (i + 1) + ". " + recipes.get(curr.getIndex()).getName()
-//                    + " (" + String.format("%.2f", prediction) + ")";
-//
-//            res[i] = temp;
-//        }
-//        return res;
-//    }
 
     public int getLatentSize() {
         return LATENT_SIZE;

@@ -16,7 +16,7 @@ abstract class Matrix {
         this.entry = new double[row][col];
     }
     
-    public Matrix(double[][] e){this.entry = e;}
+    public Matrix(double[][] e){this.entry = e;} //this is shallow copy / just moving reference
     
     public double[][] getEntry(){return this.entry;}
     public double getEntryByIndex(int i, int j){return this.entry[i][j];}

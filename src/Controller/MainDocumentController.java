@@ -16,6 +16,8 @@ import java.io.FileWriter;
 import java.io.Reader;
 import java.net.URL;
 import java.nio.file.Files;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -23,6 +25,7 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
+import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -97,6 +100,18 @@ public class MainDocumentController implements Initializable {
     private TableColumn<RecipePredicted, String> predictedRate2_col;
 
     @FXML
+    private TableView<RecipePredicted> customize_result;
+
+    @FXML
+    private TableColumn<RecipePredicted, String> cust_recipeName;
+
+    @FXML
+    private TableColumn<RecipePredicted, String> cust_predicted1;
+
+    @FXML
+    private TableColumn<RecipePredicted, String> cust_predicted2;
+    
+    @FXML
     private TableView<User> user_table;
     
     @FXML
@@ -110,6 +125,12 @@ public class MainDocumentController implements Initializable {
 
     @FXML
     private Button startBtn;
+    
+    @FXML
+    private Button custom_recom;
+    
+    @FXML
+    private Button param_save;
     
     @FXML
     private ToggleGroup learning_rate;
@@ -137,11 +158,15 @@ public class MainDocumentController implements Initializable {
     
     private ObservableList<Recipe> data_recipe;
     private ObservableList<User> data_user;
-    private ObservableList<RecipePredicted> data_ratingPrediction;
 
-    private final Factorization f = new Factorization(this);
+    private Factorization firstProcess = new Factorization(this);
+    private Factorization secondProcess;
     private String userIdChoice;
     private String LR_type;
+    private boolean isParameterSet = false;
+    private boolean isFirstProcessFactorized = false;
+    private boolean isSecondProcessFactorized = false;
+    private boolean isInProcess = false;
 
     /**
      * Initializes the controller class.
@@ -150,15 +175,15 @@ public class MainDocumentController implements Initializable {
     public void initialize(URL url, ResourceBundle rb) {
         this.mainTable.setDisable(true);
         this.programStatus.setText("reading data...");
-        boolean loadRecipeData = f.readRecipesData();
-        boolean loadUserData = f.readUsersData();
-        if (loadRecipeData && loadUserData) {
-            this.programStatus.setText("success reading view data");
+        boolean isPreprocessed = firstProcess.isPreprocessed();
+        if (isPreprocessed) {
+            this.programStatus.setText("success reading view data & initializing dataset");
+            secondProcess = firstProcess.copy();
             this.initializeTable();
         } else {
-            this.programStatus.setText("something wrong when reading dataset");
+            this.programStatus.setText("something went wrong with reading view data or initializing dataset. See program log.");
         }
-        this.mainTable.setDisable(!(loadRecipeData && loadUserData));
+        this.mainTable.setDisable(!(isPreprocessed));
         
         learning_rate.selectedToggleProperty().addListener(new ChangeListener<Toggle>() {
             public void changed(ObservableValue<? extends Toggle> ov,
@@ -204,7 +229,7 @@ public class MainDocumentController implements Initializable {
     }
 
     @FXML
-    private void startFactorization(ActionEvent event) {
+    private void saveParameter(ActionEvent event){
         Boolean[] check = new Boolean[4];
         check[0] = latent_size.getText().length() < 1 ? false : true;
         check[1] = max_iteration.getText().length() < 1 ? false : true;
@@ -216,37 +241,128 @@ public class MainDocumentController implements Initializable {
                 : true;
         if(Arrays.asList(check).contains(false)){
             //some field is empty   
-            this.programStatus.setText("Can't start factorization process, some parameter field is empty.");
+            this.programStatus.setText("WARNING: can't save parameter value, Some parameter field is empty.");
         } else {
-            //truep
-            programStatus.setText("In-process of factorization");
-            //f.setUserId(userIdChoice);
-            startBtn.setDisable(true);
-            // start the program...
-            // using thread so that the UI is responding
-            f.setParameter(
+            this.programStatus.setText("Success in setting parameter.");
+            insertLog("# Success in setting the parameter: \n"
+                    + "#   - Latent Size        : "+latent_size.getText()+"\n"
+                    + "#   - Max Iteration      : "+max_iteration.getText()+"\n"
+                    + "#   - Lambda Value       : "+lambda_value.getText()+"\n"
+                    + "#   - Learning Rate Type : "+LR_type+"\n"
+                    + "#   - Learning Rate Value: "+(LR_Value.getText().length() < 1 ? "-" : LR_Value.getText())+"\n"
+                    );
+            this.isParameterSet = true;
+            
+            //set parameter for both Factorization Object
+            firstProcess.setParameter(
                     latent_size.getText(),
                     max_iteration.getText(),
                     lambda_value.getText(),
                     LR_Value.getText(),
                     LR_type
             );
-            Thread mainThread = new Thread(f);
-            mainThread.start();
+            secondProcess.setParameter(
+                    latent_size.getText(),
+                    max_iteration.getText(),
+                    lambda_value.getText(),
+                    LR_Value.getText(),
+                    LR_type
+            );
         }
-        
+    }
+    
+    @FXML
+    private void startFactorization(ActionEvent event) {
+        if(isParameterSet && !isInProcess) {
+            programStatus.setText("In-process of factorization");
+            isInProcess = true;
+            startBtn.setDisable(true);
+            custom_recom.setDisable(true);
+            param_save.setDisable(true);
+            // start the program...
+            // using thread so that the UI is responding
+            Thread mainThread = new Thread(firstProcess);
+            mainThread.start();
+            Thread afterFactorizationThread = new Thread(){
+                @Override
+                public void run(){
+                    try{
+                        while(mainThread.getState() != Thread.State.TERMINATED){
+                            Thread.sleep(10000);
+                        }
+                        startBtn.setDisable(false);
+                        custom_recom.setDisable(false);
+                        param_save.setDisable(false);
+                        isFirstProcessFactorized = true;
+                        isInProcess = false;
+                    } catch (InterruptedException ie) {
+                        ie.printStackTrace();
+                    }
+                }
+            };
+            afterFactorizationThread.start();
+        } else{
+            if(isInProcess) this.programStatus.setText("WARNING: another factorization is in process.");
+            else this.programStatus.setText("WARNING: parameter is not set yet.");
+        }
     }
 
     @FXML
-    private void validateCustomRating(ActionEvent event) {
-        Pattern zero = Pattern.compile("[0-5](\\.(00|0))?"); //filter non zero
-        ObservableList<Recipe> customeRating = this.recipes_table.getItems();
-        for(Recipe curr: customeRating){
-            if(zero.matcher(curr.getUserRating()).matches()){
-                //do nothing
-            } else {
-                System.out.printf("%s: %.2f",curr.getName(),Double.parseDouble(curr.getUserRating()));
+    private void doCustomeRecommendation(ActionEvent event) {
+        if(isParameterSet && !isInProcess) {
+            programStatus.setText("In-process of customize factorization");
+            custom_recom.setDisable(true);
+            startBtn.setDisable(true);
+            param_save.setDisable(true);
+            recipes_table.setDisable(true);
+            isInProcess = true;
+            // create hash map of new custom rating
+            HashMap<String, String> customRating = new HashMap<String,String>();
+            Pattern zero = Pattern.compile("[0](\\.(00|0))?"); //filter non zero
+            ObservableList<Recipe> userRating = this.recipes_table.getItems();
+            for(Recipe curr: userRating){
+                if(!zero.matcher(curr.getUserRating()).matches()){ //not match regex == not 0 | 0.0 | 0.00
+                    customRating.put(curr.getId(),curr.getUserRating());
+                }
             }
+            // start the program...
+            // using thread so that the UI is responding
+            if(customRating.size()>=5){
+                secondProcess.addCustomUser("-1", customRating);
+                Thread mainThread = new Thread(secondProcess);
+                mainThread.start();
+                Thread afterFactorizationThread = new Thread(){
+                    @Override
+                    public void run(){
+                        try{
+                            while(mainThread.getState() != Thread.State.TERMINATED){
+                                Thread.sleep(10000);
+                            }
+                            custom_recom.setDisable(false);
+                            startBtn.setDisable(false);
+                            param_save.setDisable(false);
+                            recipes_table.setDisable(false);
+                            isSecondProcessFactorized = true;
+                            isInProcess = false;
+                            //show recommendation
+                            updateCustomRecommendationTable();
+                        } catch (InterruptedException ie) {
+                            ie.printStackTrace();
+                        }
+                    }
+                };
+                afterFactorizationThread.start();
+            } else {
+                isInProcess = false;
+                custom_recom.setDisable(false);
+                startBtn.setDisable(false);
+                param_save.setDisable(false);
+                recipes_table.setDisable(false);
+                this.programStatus.setText("WARNING: you did not give any rating, please gives rating at least 5 rating.");
+            }
+        } else{
+            if(isInProcess) this.programStatus.setText("WARNING: another factorization is in process.");
+            else this.programStatus.setText("WARNING: parameter is not set yet.");
         }
     }
     
@@ -337,7 +453,7 @@ public class MainDocumentController implements Initializable {
     
     private void initializeTable() {
         // custom user rating recipe table
-        this.data_recipe = FXCollections.observableList(f.getRecipes());
+        this.data_recipe = FXCollections.observableList(firstProcess.getRecipes());
         this.recipeCol.setCellValueFactory(
                 new PropertyValueFactory<Recipe, String>("name"));
         this.ingredientsCol.setCellValueFactory(cellData
@@ -346,28 +462,14 @@ public class MainDocumentController implements Initializable {
         // editable column
         this.ratingCol.setCellValueFactory(
                 new PropertyValueFactory<Recipe, String>("userRating"));
-        
-        //this is the JavaFX docummentation from Oracle result (Simple editable String)
-        //needed one that can match a regex pattern for decimal number
-//        this.ratingCol.setCellFactory(TextFieldTableCell.forTableColumn(new IntegerStringConverter()));
-//        this.ratingCol.setOnEditCommit(
-//            new EventHandler<CellEditEvent<Recipe, String>>() {
-//                @Override
-//                public void handle(CellEditEvent<Recipe, String> t) {
-//                    ((Recipe) t.getTableView().getItems().get(
-//                            t.getTablePosition().getRow())
-//                            ).setUserRating(t.getNewValue());
-//                }
-//            }
-//        );
 
-        //again, thanks to the person from referable link on the RatingEditingCell inner class
+        // thanks to the person from referable link on the RatingEditingCell inner class
         this.ratingCol.setCellFactory(col -> new RatingEditingCell());
         
         this.recipes_table.setItems(this.data_recipe);
 
         // user id table data
-        this.data_user = FXCollections.observableList(f.getUsers());
+        this.data_user = FXCollections.observableList(firstProcess.getUsers());
         this.userId_col.setCellValueFactory(
                 new PropertyValueFactory<User, Integer>("id"));
         this.action_col.setCellValueFactory(new PropertyValueFactory<>("DUMMY"));
@@ -390,9 +492,13 @@ public class MainDocumentController implements Initializable {
                             setText(null);
                         } else {
                             btn.setOnAction(event -> {
-                                User u = getTableView().getItems().get(getIndex());
-                                userIdChoice = u.getId();
-                                updateRecommendationTable();
+                                if(isFirstProcessFactorized){
+                                    User u = getTableView().getItems().get(getIndex());
+                                    userIdChoice = u.getId();
+                                    updateRecommendationTable();
+                                } else {
+                                    programStatus.setText("Model is not factorized yet for the first time. Can't give recommendation.");
+                                }
                             });
                             setGraphic(btn);
                             setText(null);
@@ -410,7 +516,15 @@ public class MainDocumentController implements Initializable {
     }
 
     public void insertLog(String s) {
-        this.log_field.appendText(s);
+        Platform.runLater(() -> {
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");  
+            LocalDateTime now = LocalDateTime.now();  
+            String time = (dtf.format(now));
+            this.log_field.appendText("~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+            this.log_field.appendText("# Time: "+time+"\n");
+            this.log_field.appendText(s);
+            this.log_field.appendText("~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n");
+        });
     }
     
     private void alterLabelField(String text){
@@ -423,14 +537,18 @@ public class MainDocumentController implements Initializable {
             LR_label.setVisible(false);
             LR_Value.setVisible(false);
         }
-        
+    }
+    
+    public void firstProcessDone(){
+        startBtn.setDisable(false);
+        isFirstProcessFactorized = true;
     }
     
     public void updateRecommendationTable(){
         // thanks: https://www.stackoverflow.com/question/18971109/javafx-tableview-not-showing-data-in-all-columns
         // for pointing observablelist attribute naming
         this.recommendation_table.setDisable(true);
-        this.data_ratingPrediction = FXCollections.observableList(f.getUserPrediction(userIdChoice));
+        ObservableList<RecipePredicted> data_ratingPrediction = FXCollections.observableList(firstProcess.getUserPrediction(userIdChoice));
         
         this.recipe_col.setCellValueFactory(
                 new PropertyValueFactory<RecipePredicted, String>("recipeName"));
@@ -448,10 +566,30 @@ public class MainDocumentController implements Initializable {
         this.recommendation_table.setDisable(false);
     }
     
-    public void afterFactorization(){
-        this.recom_tab.setDisable(false);
-        this.custom_recom_tab.setDisable(false);
+    public void updateCustomRecommendationTable(){
+        // thanks: https://www.stackoverflow.com/question/18971109/javafx-tableview-not-showing-data-in-all-columns
+        // for pointing observablelist attribute naming
+        this.customize_result.setDisable(true);
+        ObservableList<RecipePredicted> data_ratingPrediction = FXCollections.observableList(secondProcess.getUserPrediction("-1"));
+        
+        this.cust_recipeName.setCellValueFactory(
+                new PropertyValueFactory<RecipePredicted, String>("recipeName"));
+
+        this.cust_predicted1.setCellValueFactory(
+                new PropertyValueFactory<RecipePredicted, String>("firstRating"));
+    
+        this.cust_predicted2.setCellValueFactory(
+                new PropertyValueFactory<RecipePredicted, String>("secondRating"));
+    
+        this.customize_result.setItems(data_ratingPrediction);
+        this.customize_result.setDisable(false);
     }
+    
+//   public void afterFactorization(){
+//        this.recom_tab.setDisable(false);
+//        this.custom_recom_tab.setDisable(false);
+//        this.isFactorized = true;
+//    }
     
     
     //thanks to: https://stackoverflow.com/questions/27900344/how-to-make-a-table-column-with-integer-datatype-editable-without-changing-it-to
@@ -476,7 +614,7 @@ public class MainDocumentController implements Initializable {
             String text = textField.getText();
             if (decimalPattern.matcher(text).matches()) {
                 String[] number = text.split(".");
-                if(number.length != 0){ //single input like 5, 4, 3, 2, 1
+                if(number.length != 0){ //single input like 5, 4, 3, 2, 1, 0
                     if(Integer.parseInt(number[0]) == 5 && Integer.parseInt(number[1])>0){
                     // rating like 5.9 or something
                     cancelEdit();

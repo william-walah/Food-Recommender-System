@@ -10,23 +10,23 @@ package Model;
  * @author asus
  */
 public class Pair {
-    private String p1; //user
-    private String p2; //recipe
+    private String user; //user
+    private String recipe; //recipe
     
     public Pair(String s1, String s2){
-        this.p1 = s1;
-        this.p2 = s2;
+        this.user = s1;
+        this.recipe = s2;
     }
     
     public void setPair(String s1, String s2){
-        this.p1 = s1;
-        this.p2 = s2;
+        this.user = s1;
+        this.recipe = s2;
     }
     
     public String[] getPair(){
-        return new String[] {this.p1,this.p2};
+        return new String[] {this.user,this.recipe};
     }
     
-    public String getUser(){return p1;}
-    public String getRecipe(){return p2;}
+    public String getUser(){return user;}
+    public String getRecipe(){return recipe;}
 }

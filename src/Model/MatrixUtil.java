@@ -56,6 +56,7 @@ public class MatrixUtil {
         return res;
     }
     
+    //vector calculation (+/-)
     public static double[]  vectorCalculation(double[] left, double[] right, int type) {
         if(left.length != right.length) throw new RuntimeException("Error mismatch vector length on simple calculation(add/sub)");
         double[] res = new double[left.length];
@@ -74,11 +75,14 @@ public class MatrixUtil {
         return res;
     }
     
+    //vector calculation (+/-) with scalar to be applied either:
+    //   - after calculation between vector entry
+    //   - only on right vector value
     public static double[]  vectorCalculation(
             double[] left,
             double[] right, 
             int type, //0 = -, 1 = +
-            boolean both, //0 = calculate value then multiply by scalar, 1 = multiply scalar on right value
+            boolean both, //true = scalar multiply after +/- calculation, false = scalar multiply to right vector
             double scalar
     ) {
         if(left.length != right.length) throw new RuntimeException("Error mismatch vector length on simple calculation(add/sub)");

@@ -68,7 +68,12 @@
                            </font>
                         </Label>
                         <TextArea fx:id="log_field" editable="false" layoutX="640.0" layoutY="70.0" prefHeight="514.0" prefWidth="619.0" styleClass="logging_field" stylesheets="@../Style/style.css" />
-                        <Button fx:id="startBtn" layoutX="212.0" layoutY="354.0" mnemonicParsing="false" onAction="#startFactorization" text="Mulai Faktorisasi" textFill="#9a1b1b">
+                        <Button fx:id="startBtn" layoutX="328.0" layoutY="327.0" mnemonicParsing="false" onAction="#startFactorization" prefHeight="33.0" prefWidth="182.0" text="Mulai Faktorisasi" textFill="#9a1b1b">
+                           <font>
+                              <Font name="Arial Bold" size="18.0" />
+                           </font>
+                        </Button>
+                        <Button fx:id="param_save" layoutX="108.0" layoutY="327.0" mnemonicParsing="false" onAction="#saveParameter" text="Simpan Parameter">
                            <font>
                               <Font name="Arial Bold" size="18.0" />
                            </font>
@@ -77,7 +82,7 @@
                   </AnchorPane>
               </content>
             </Tab>
-          <Tab fx:id="recom_tab" disable="true" text="View Recommendation">
+          <Tab fx:id="recom_tab" text="View Recommendation">
             <content>
               <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                      <children>
@@ -107,7 +112,7 @@
                               </TableView>
                            </children>
                         </StackPane>
-                        <Label layoutX="590.0" layoutY="57.0" text="Sedang Menampilkan Rekomendasi User:" textFill="#142179">
+                        <Label layoutX="559.0" layoutY="57.0" text="Sedang Menampilkan Rekomendasi User:" textFill="#142179">
                            <font>
                               <Font name="Arial Bold" size="18.0" />
                            </font>
@@ -131,7 +136,7 @@
                               </TableView>
                            </children>
                         </StackPane>
-                        <Button fx:id="validate_rating" layoutX="470.0" layoutY="511.0" mnemonicParsing="false" onAction="#validateCustomRating" prefHeight="31.0" prefWidth="170.0" text="Recommend Me!" textFill="#0e540a">
+                        <Button fx:id="custom_recom" layoutX="470.0" layoutY="511.0" mnemonicParsing="false" onAction="#doCustomeRecommendation" prefHeight="31.0" prefWidth="170.0" text="Recommend Me!" textFill="#0e540a">
                            <font>
                               <Font name="Arial Bold" size="15.0" />
                            </font></Button>
@@ -145,6 +150,22 @@
                               <Font name="Arial Bold" size="15.0" />
                            </font>
                         </Button>
+                        <Label layoutX="710.0" layoutY="45.0" text="Rekomendasi Anda:" textFill="#1e0c51">
+                           <font>
+                              <Font name="Arial Bold" size="18.0" />
+                           </font>
+                        </Label>
+                        <StackPane layoutX="710.0" layoutY="80.0" prefHeight="529.0" prefWidth="535.0">
+                           <children>
+                              <TableView fx:id="customize_result" prefHeight="200.0" prefWidth="200.0">
+                                <columns>
+                                  <TableColumn fx:id="cust_recipeName" prefWidth="237.0" text="Recipes" />
+                                  <TableColumn fx:id="cust_predicted1" prefWidth="154.0" text="Rating (P1)" />
+                                    <TableColumn fx:id="cust_predicted2" prefWidth="143.0" text="Rating (P2)" />
+                                </columns>
+                              </TableView>
+                           </children>
+                        </StackPane>
                      </children></AnchorPane>
             </content>
           </Tab>
