@@ -76,4 +76,13 @@ public class FactorMatrix extends Matrix{
     }
     
     public double[][] getEntry(){return this.entry;}
+    
+    public void optimizeAllValue(){
+        for (int i = 0; i < entry.length; i++) {
+            for (int j = 0; j < entry[j].length; j++) {
+                if(entry[i][j]>5.0) entry[i][j] = 5.0;
+                else if(entry[i][j]<0.0) entry[i][j] = 0.0;
+            }
+        }
+    }
 }

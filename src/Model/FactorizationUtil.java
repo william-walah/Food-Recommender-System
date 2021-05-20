@@ -54,8 +54,7 @@ public class FactorizationUtil {
             //System.out.println(String.format("%.3f_p %.3f_a",predicted,trainM.getEntryByIndex(userIndex, recipeIndex)));
             sumOfErrorSquared += Math.pow((trainM.getEntryByIndex(userIndex, recipeIndex) - predicted), 2);
         }
-
-//        System.out.println(String.format("%.3f",sumOfErrorSquared));
+//        System.out.println("Error without penalty: "+sumOfErrorSquared);
         double penalty = LAMBDA * (user.calculateVectorLength() + recipe.calculateVectorLength());
 //        System.out.println(String.format("%.3f",penalty));
         return sumOfErrorSquared + penalty;
@@ -72,12 +71,60 @@ public class FactorizationUtil {
             TrainMatrix tm
     ) {
         //update the user matrix factor value
-        double[][] userVector = user.getEntry(); //reference
-        for (int i = 0; i < userVector.length; i++) {
+//        double[][] userVector = user.getEntry(); //reference
+//        for (int i = 0; i < userVector.length; i++) {
+//            double[] newLatent = MatrixUtil.vectorCalculation(
+//                    userVector[i], //previous value
+//                    calculateLearningValue_m1(
+//                            userVector[i],
+//                            i,
+//                            recipe,
+//                            trainPair,
+//                            recipeMap,
+//                            userMap_r,
+//                            FactorType.USER,
+//                            tm), //learning value
+//                    1); //addition
+//            //um... ubah value kalau lebih dari 5 jadi 5, kurang dari 0 jadi 0?
+//            for (int j = 0; j < newLatent.length; j++) {
+//                if (newLatent[j] > 5) {
+//                    newLatent[j] = 5.0;
+//                } else if (newLatent[j] < 0) {
+//                    newLatent[j] = 0.0;
+//                }
+//            }
+//            userVector[i] = newLatent;
+//        }
+//        //update the recipe matrix factor value
+//        double[][] recipeVetor = recipe.getEntry();
+//        for (int i = 0; i < recipeVetor.length; i++) {
+//            double[] newLatent = MatrixUtil.vectorCalculation(
+//                    recipeVetor[i], //previous value
+//                    calculateLearningValue_m1(
+//                            recipeVetor[i],
+//                            i,
+//                            user,
+//                            trainPair,
+//                            userMap,
+//                            recipeMap_r,
+//                            FactorType.RECIPES,
+//                            tm), //learning value
+//                    1); //addition
+//            for (int j = 0; j < newLatent.length; j++) {
+//                if (newLatent[j] > 5) {
+//                    newLatent[j] = 5.0;
+//                } else if (newLatent[j] < 0) {
+//                    newLatent[j] = 0.0;
+//                }
+//            }
+//            recipeVetor[i] = newLatent;
+//        }
+        double[][] userM = new double[user.getRowLength()][user.getColLength()];
+        for (int i = 0; i < userM.length; i++) {
             double[] newLatent = MatrixUtil.vectorCalculation(
-                    userVector[i], //previous value
+                    user.getFactorByIndex(i), //previous value
                     calculateLearningValue_m1(
-                            userVector[i],
+                            user.getFactorByIndex(i),
                             i,
                             recipe,
                             trainPair,
@@ -94,15 +141,15 @@ public class FactorizationUtil {
                     newLatent[j] = 0.0;
                 }
             }
-            userVector[i] = newLatent;
+            userM[i] = newLatent;
         }
         //update the recipe matrix factor value
-        double[][] recipeVetor = recipe.getEntry();
-        for (int i = 0; i < recipeVetor.length; i++) {
+        double[][] recipeM = new double[recipe.getRowLength()][recipe.getColLength()];
+        for (int i = 0; i < recipeM.length; i++) {
             double[] newLatent = MatrixUtil.vectorCalculation(
-                    recipeVetor[i], //previous value
+                    recipe.getFactorByIndex(i), //previous value
                     calculateLearningValue_m1(
-                            recipeVetor[i],
+                            recipe.getFactorByIndex(i),
                             i,
                             user,
                             trainPair,
@@ -118,8 +165,11 @@ public class FactorizationUtil {
                     newLatent[j] = 0.0;
                 }
             }
-            recipeVetor[i] = newLatent;
+            recipeM[i] = newLatent;
         }
+        
+        user.setEntry(userM);
+        recipe.setEntry(recipeM);
     }
 
     public double[] calculateLearningValue_m1(
@@ -196,19 +246,12 @@ public class FactorizationUtil {
             int userIndex = userMap.get(curr.getUser());
             int recipeIndex = recipeMap.get(curr.getRecipe());
             double actual = trainM.getEntryByIndex(userIndex, recipeIndex);
-//            double[] userFactor = user.getFactorByIndex(userIndex); //length f
-//            double[][] ingredientsFactor = ingredient.getEntry(); //dimension of o(ingredient) x f
-//            double[] recipeMask = recipeIngredientMap.getFactorByIndex(recipeIndex); //length o
-//            double predicted = MatrixUtil.vectorMultiplication(
-//                    MatrixUtil.vectorMultiplyMatrix(userFactor, ingredientsFactor),
-//                    recipeMask
-//            );
             double predicted = prediction[userIndex][recipeIndex];
             predicted = predicted / (TRUNCATION_VAL*listOfRecipe.get(recipeIndex).getIngredientLength());
-//            System.out.println(actual+","+predicted);
             sumOfErrorSquared += Math.pow((actual - predicted), 2);
         }
         double penalty = LAMBDA * (user.calculateVectorLength() + ingredient.frobeniusNorm());
+        System.out.println("Error without penalty: "+sumOfErrorSquared);
         return sumOfErrorSquared + penalty;
     }
 
@@ -226,13 +269,57 @@ public class FactorizationUtil {
             TrainMatrix tm
     ) {
         //update the user matrix factor value
-        double[][] userVector = user.getEntry();
-        for (int i = 0; i < userVector.length; i++) {
+//        double[][] userVector = user.getEntry();
+//        for (int i = 0; i < userVector.length; i++) {
+//            //MatrixUtil.sumAll(new double[][]{userVector[i]});
+//            double[] newLatent = MatrixUtil.vectorCalculation(
+//                    userVector[i], //previous value
+//                    calcLearningValue_m2_user(
+//                            prediction,
+//                            userVector[i],
+//                            i,
+//                            ingredient,
+//                            recipeIngredientMap,
+//                            trainPair,
+//                            recipes,
+//                            recipeMap,
+//                            userMap_r,
+//                            tm), //learning value
+//                    1); //addition
+//            for (int j = 0; j < newLatent.length; j++) {
+//                if (newLatent[j] > 5.0) {
+//                    newLatent[j] = 5.0;
+//                } else if (newLatent[j] < 0.0) {
+//                    newLatent[j] = 0.0;
+//                }
+//            }
+//            userVector[i] = newLatent;
+//            //MatrixUtil.sumAll(new double[][]{userVector[i]});
+//        }
+//        //update the ingredients matrix factor value
+//        double[][] lvIngredientMatrix = calcLearningValue_m2_ingredient(
+//            prediction,
+//            ingredient.getEntry(),
+//            user,
+//            recipeIngredientMap,
+//            trainPair,
+//            recipes,
+//            userMap, 
+//            recipeMap,
+//            tm
+//        );
+//        //System.out.println(lvIngredientMatrix.length+ " | "+lvIngredientMatrix[0].length);
+//        ingredient.add(lvIngredientMatrix);
+//        //optimize value
+//        ingredient.optimizeAllValue();
+        double[][] userM = new double[user.getRowLength()][user.getColLength()];
+        for (int i = 0; i < userM.length; i++) {
+            //MatrixUtil.sumAll(new double[][]{userVector[i]});
             double[] newLatent = MatrixUtil.vectorCalculation(
-                    userVector[i], //previous value
+                    user.getFactorByIndex(i), //previous value
                     calcLearningValue_m2_user(
                             prediction,
-                            userVector[i],
+                            user.getFactorByIndex(i),
                             i,
                             ingredient,
                             recipeIngredientMap,
@@ -249,7 +336,8 @@ public class FactorizationUtil {
                     newLatent[j] = 0.0;
                 }
             }
-            userVector[i] = newLatent;
+            userM[i] = newLatent;
+            //MatrixUtil.sumAll(new double[][]{userVector[i]});
         }
         //update the ingredients matrix factor value
         double[][] lvIngredientMatrix = calcLearningValue_m2_ingredient(
@@ -263,16 +351,11 @@ public class FactorizationUtil {
             recipeMap,
             tm
         );
-        for (int i = 0; i < lvIngredientMatrix.length; i++) {
-            for (int j = 0; j < lvIngredientMatrix[i].length; j++) {
-                if (lvIngredientMatrix[i][j] > 5.0) {
-                    lvIngredientMatrix[i][j] = 5.0;
-                } else if (lvIngredientMatrix[i][j] < 0.0) {
-                    lvIngredientMatrix[i][j] = 0.0;
-                }
-            }
-        }
+        //System.out.println(lvIngredientMatrix.length+ " | "+lvIngredientMatrix[0].length);
+        user.setEntry(userM);
         ingredient.add(lvIngredientMatrix);
+        //optimize value
+        ingredient.optimizeAllValue();
     }
 
     public double[] calcLearningValue_m2_user( //for user vector
@@ -290,29 +373,20 @@ public class FactorizationUtil {
         String targetId = reverseMap.get(index);
         double[] res = new double[latentVector.length];
         double[] lambdaTarget = MatrixUtil.scalarMultiplication(LAMBDA, latentVector);
-//        double[][] inrgedientMatrix = ingredient.getEntry();
-        //calculate pair... why not do inside loop? too slow
-        double[][] pair = recipeIngredientMap.mulitply(ingredient.getEntry());
-        //List<Pair> filtered = observable.stream().filter(p -> p.getUser().equals(targetId)).collect(Collectors.toList());
+        //error di pair, perkalian matrik sifatnya AB != BA
+        //double[][] pair = recipeIngredientMap.multiply(ingredient.getEntry());
+        double[][] pair = MatrixUtil.multiplyWithTransposing(ingredient.getEntry(), recipeIngredientMap.transpose(), true);
         for (Pair curr: observable) {
             if(curr.getUser().equals(targetId)){
                 int recipeIndex = recipeMap.get(curr.getRecipe()); //map = recipeMap
                 double trainValue = trainM.getEntryByIndex(index, recipeIndex); // nilai training
-//                double[] recipeIngredientVector = recipeIngredientMap.getFactorByIndex(recipeIndex); // vector berisi nilai 1 / 0 bila makanan memiliki bahan di index-i
-//                double[] pair = MatrixUtil.vectorMultiplyMatrix(recipeIngredientVector, inrgedientMatrix); // vector hasil perkalian matrix bahan makanan dengan vector bahan resep makanan
                 double predicted = prediction[index][recipeIndex];
                 double error = trainValue - (predicted / (TRUNCATION_VAL* listOfRecipe.get(recipeIndex).getIngredientLength())); // nilai error / prediksi
-                /* 
-                above calculation (errorTimesPair) too slow, can be integrated like below
-                //double[] errorTimesPair = MatrixUtil.scalarMultiplication(error, pair[recipeIndex]);//calculate error times pair
-                //res = MatrixUtil.vectorCalculation(res, errorTimesPair, 1);
-                */
-                res = MatrixUtil.vectorCalculation(res,pair[recipeIndex],1,false,error);
+                //res = MatrixUtil.vectorCalculation(res,pair[recipeIndex],1,false,error);
+//                System.out.println(error);
+                res = MatrixUtil.vectorCalculation(res,MatrixUtil.getColumnVector(pair, recipeIndex),1,false,error);
             }
         }
-        //res = MatrixUtil.vectorCalculation(res, lambdaTarget, 0);
-        //calculate result * learning rate
-        //res = MatrixUtil.scalarMultiplication(LEARNING_RATE, res);
         res = MatrixUtil.vectorCalculation(res, lambdaTarget, 0, true, LEARNING_RATE);
         return res;
     }
@@ -336,25 +410,16 @@ public class FactorizationUtil {
             double actual = trainM.getEntryByIndex(userIndex, recipeIndex);
             double[] userVector = user.getFactorByIndex(userIndex);
             double[] recipeMask = recipeIngredientMap.getFactorByIndex(recipeIndex);
-//            double predicted =  
-//                    MatrixUtil.vectorMultiplication(
-//                            MatrixUtil.vectorMultiplyMatrix(userVector, matrix),
-//                            recipeMask
-//                    );
             double predicted = prediction[userIndex][recipeIndex];
-            double error = (actual-predicted) / (TRUNCATION_VAL* listOfRecipe.get(recipeIndex).getIngredientLength());
+            //System.out.println(actual+" , "+predicted);
+            double error = actual - (predicted / (TRUNCATION_VAL* listOfRecipe.get(recipeIndex).getIngredientLength()));
+            //System.out.println(actual+" , "+(predicted / (TRUNCATION_VAL* listOfRecipe.get(recipeIndex).getIngredientLength())));
             double[][] pair = MatrixUtil.vectorMultiplicationToMatrix(recipeMask, userVector);
-//            res = MatrixUtil.matrixCalculation(
-//                    res,
-//                    MatrixUtil.scalarMultiplication(
-//                            error,
-//                            pair
-//                            ),
-//                    1
-//            ); too slow
             res = MatrixUtil.matrixCalculation(res,pair,1,false,error);
         }
-        res = MatrixUtil.matrixCalculation(res, lambdaValue, 0);
+        //res = MatrixUtil.matrixCalculation(res, lambdaValue, 0, false, LEARNING_RATE);
+            res = MatrixUtil.matrixCalculation(res, lambdaValue, 0);
+            res = MatrixUtil.scalarMultiplication(LEARNING_RATE, res);
         return res;
     }
 

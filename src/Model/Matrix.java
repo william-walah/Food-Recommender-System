@@ -19,6 +19,7 @@ abstract class Matrix {
     public Matrix(double[][] e){this.entry = e;} //this is shallow copy / just moving reference
     
     public double[][] getEntry(){return this.entry;}
+    public void setEntry(double[][] o){this.entry = o;}
     public double getEntryByIndex(int i, int j){return this.entry[i][j];}
     
     // basic method
@@ -59,7 +60,7 @@ abstract class Matrix {
         return result;
     }
     
-    public double[][] mulitply(double[][] o){
+    public double[][] multiply(double[][] o){
         int m1 = this.entry.length;
         int n1 = this.entry[0].length;
         int m2 = o.length;

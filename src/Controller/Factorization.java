@@ -59,7 +59,7 @@ public class Factorization implements Runnable {
     private HashMap<Integer, String> ingredientMap_r;
     private int MAX_LOOP;
     private int INIT_USER_SPACE; //used to check if there is already customize user rating
-    private final double MIN_OBJECTIVE_VAL = 10.0;
+    private double MIN_OBJECTIVE_VAL = 0.0;
     private int learningType; //fixed or iteratively change to 1/t
 
     public Factorization(MainDocumentController c) {
@@ -67,7 +67,7 @@ public class Factorization implements Runnable {
         this.users = new ArrayList<User>();
         this.ingredients = new ArrayList<String>();
         this.result = new ArrayList<double[][]>();
-        this.userMap = new HashMap<String, Integer>();
+        this.userMap = new HashMap  <String, Integer>();
         this.userMap_r = new HashMap<Integer, String>();
         this.recipeMap = new HashMap<String, Integer>();
         this.recipeMap_r = new HashMap<Integer, String>();
@@ -240,6 +240,9 @@ public class Factorization implements Runnable {
 
     @Override
     public void run() {
+        //set min obj value
+        //SIZE OF OBJ * MIN.ERROR
+        this.MIN_OBJECTIVE_VAL = this.d.getTrainPair().size()*0.5;
         this.mdc.insertLog("#1 Splitting Dataset\n");
         //1. Split Dataset
         boolean isSplitted = false;
@@ -270,10 +273,13 @@ public class Factorization implements Runnable {
         try {
             // user factor = m x f
             userFactor = new FactorMatrix(this.trainM.getRowLength(), utils.getLatentSize(), FactorType.USER);
+            System.out.println("user factor: "+this.trainM.getRowLength()+"x"+utils.getLatentSize());
             // recipe factor = n x f
             recipeFactor = new FactorMatrix(this.trainM.getColLength(), utils.getLatentSize(), FactorType.RECIPES);
+            System.out.println("recipe factor: "+this.trainM.getColLength()+"x"+utils.getLatentSize());
             // ingredient factor = o x f
             ingredientFactor = new FactorMatrix(this.ingredients.size(), utils.getLatentSize(), FactorType.INGREDIENTS);
+            System.out.println("ingredient factor: "+this.ingredients.size()+"x"+utils.getLatentSize());
             // recipe x ingredient map matrix = n x o (mask matrix 1/0)
             recipeIngredientsMap = new FactorMatrix(this.trainM.getColLength(),
                     this.ingredients.size(),
@@ -281,6 +287,7 @@ public class Factorization implements Runnable {
                     this.recipes,
                     this.recipeMap,
                     this.ingredientMap);
+            System.out.println("recipe ingre map: "+this.trainM.getColLength()+"x"+this.ingredients.size());
             userFactor_2 = new FactorMatrix(userFactor);
             initializeFactor = true;
         } catch (Exception e) {
@@ -293,21 +300,25 @@ public class Factorization implements Runnable {
                 return;
             }
         }
-
+        
+        //3. entering loop  
+        //loop a thousand time or break if objective value less than MIN_OBJECTIVE_VAL
+        boolean firstMethodOptimization = false;   
+        boolean secondMethodOptimization = false;
+        double objFuncPrev_1 = 0.0;    
+        double objFuncPrev_2 = 0.0;
+        
         this.mdc.insertLog("#3.1 Entering Optimization Loop process\n"
                 + "# Process No. 1 Detail:\n"
                 + "# Max Number of iteration: " + MAX_LOOP + "\n"
                 + "# Method: Factorization with two Matrix Factor-User & Recipes\n"
         );
-        //3. entering loop  
-        //loop a thousand time or break if objective value less than MIN_OBJECTIVE_VAL
-        boolean firstMethodOptimization = false;
-        long start = System.currentTimeMillis();     
-        double objFuncPrev_1 = 0.0;       
+        long start = System.currentTimeMillis(); 
         try{
             int loop = MAX_LOOP;
             while(loop-->0){
                 if(this.learningType > 0) this.utils.setLearningRate(1.0/((MAX_LOOP-loop)*1.0)); //iteratively 
+                if(loop%250==0) {System.out.println("loop: "+(MAX_LOOP-loop));}
                 double objectiveValue = utils.objectiveFunction_m1(
                         userFactor,
                         recipeFactor,
@@ -316,10 +327,7 @@ public class Factorization implements Runnable {
                         this.userMap,
                         this.recipeMap
                 );
-                if(loop%250==0) {
-                    System.out.println("loop: "+(MAX_LOOP-loop));
-//                    System.out.println(objectiveValue);
-                }
+                if(loop%250==0) {System.out.println("Objective Function: "+objectiveValue);}
                 //System.out.println(objectiveValue);
                 if(objectiveValue <= MIN_OBJECTIVE_VAL) break;
                 else if (Math.abs(objFuncPrev_1 - objectiveValue) <= 0.00001) {
@@ -353,25 +361,31 @@ public class Factorization implements Runnable {
         }
         long elapsedTime_1 = System.currentTimeMillis() - start;
         
-        start = System.currentTimeMillis(); 
         this.mdc.insertLog("#3.2 Entering Optimization Loop process\n"
                 + "# Process No. 2 Detail:\n"
                 + "# Max Number of iteration: " + MAX_LOOP + "\n"
                 + "# Method: Factorization with two Matrix Factor-User & Ingredients\n"
         );
-        boolean secondMethodOptimization = false;
-        double objFuncPrev_2 = 0.0;
+        start = System.currentTimeMillis();  
         try {
             int loop = MAX_LOOP;
             while (loop-- > 0) {
-                //if(loop%250==0) System.out.println("loop: "+(1000-loop));
                 System.out.println("loop: " + (MAX_LOOP - loop));
+                //AB != BA.... 
+//                double[][] currPrediction = MatrixUtil.multiplyWithTransposing(
+//                        userFactor_2.getEntry(),
+//                        recipeIngredientsMap.multiply(
+//                                ingredientFactor.getEntry()
+//                        ),  
+//                        false);
+                if(this.learningType > 0) this.utils.setLearningRate(1.0/((MAX_LOOP-loop)*1.0)); //iteratively 
+                MatrixUtil.sumAll(userFactor_2.getEntry());
+                MatrixUtil.sumAll(ingredientFactor.getEntry());
                 double[][] currPrediction = MatrixUtil.multiplyWithTransposing(
-                        userFactor_2.getEntry(),
-                        recipeIngredientsMap.mulitply(
-                                ingredientFactor.getEntry()
-                        ),
-                        false);
+                        MatrixUtil.multiplyWithTransposing(userFactor_2.getEntry(), ingredientFactor.getEntry(), false),
+                        recipeIngredientsMap.getEntry(),
+                        false); 
+                        
                 double objectiveValue = utils.objectiveFunction_m2(
                         currPrediction,
                         userFactor_2,
@@ -383,7 +397,7 @@ public class Factorization implements Runnable {
                         this.userMap,
                         this.recipeMap
                 );
-                System.out.println(objectiveValue);
+                System.out.println("Objective Function: "+objectiveValue);
                 if (objectiveValue <= MIN_OBJECTIVE_VAL) {
                     break;
                 } else if (Math.abs(objFuncPrev_2 - objectiveValue) <= 0.00001) {
@@ -422,13 +436,11 @@ public class Factorization implements Runnable {
         }
         long elapsedTime_2 = System.currentTimeMillis() - start;
 
-        double[][] model1 = userFactor.mulitply(recipeFactor.transpose());
+        double[][] model1 = userFactor.multiply(recipeFactor.transpose());
         double[][] model2 = MatrixUtil.multiplyWithTransposing(
-                userFactor_2.getEntry(),
-                recipeIngredientsMap.mulitply(
-                        ingredientFactor.getEntry()
-                ),
-                false);
+                MatrixUtil.multiplyWithTransposing(userFactor_2.getEntry(), ingredientFactor.getEntry(), false),
+                recipeIngredientsMap.getEntry(),
+                false); 
 
         this.result.add(model1);
         this.result.add(model2);

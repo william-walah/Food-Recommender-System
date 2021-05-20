@@ -30,7 +30,7 @@ public class MatrixUtil {
         double[][] res = new double[v1.length][v2.length];
         for (int i = 0; i < res.length; i++) {
             for (int j = 0; j < res[i].length; j++) {
-                res[i][j] = v1[i]+v2[j];
+                res[i][j] = v1[i]*v2[j];
             }
         }
         return res;
@@ -195,7 +195,6 @@ public class MatrixUtil {
     
     public static double[][] multiplyWithTransposing(double[][] left, double[][] right, boolean transpose){
         //true (left), false(right)
-//        if(left.length <2 || right.length <2) throw new RuntimeException("Error matrix calculation: matrix dimension's 1 x n, do you mean to use scalar to matrix multiplication?");
         double[][] res = null;
         int r1 = left.length;
         int c1 = left[0].length;
@@ -223,5 +222,19 @@ public class MatrixUtil {
             }
         }
         return res;
+    }
+    
+    public static void sumAll(double[][] o){
+        double res = 0.0;
+        for (int i = 0; i < o.length; i++) {
+            for (int j = 0; j < o[i].length; j++) {
+                if(o[i][j]>5.0) {
+                    System.out.println(o[i][j]);
+                    System.exit(1);
+                }
+                res+= o[i][j];
+            }
+        }
+        System.out.printf("%.5f\n",res);
     }
 }
