@@ -314,6 +314,7 @@ public class Factorization implements Runnable {
                 + "# Method: Factorization with two Matrix Factor-User & Recipes\n"
         );
         long start = System.currentTimeMillis(); 
+        String[] obj1_list = new String[1000];
         try{
             int loop = MAX_LOOP;
             while(loop-->0){
@@ -327,7 +328,10 @@ public class Factorization implements Runnable {
                         this.userMap,
                         this.recipeMap
                 );
-                if(loop%250==0) {System.out.println("Objective Function: "+objectiveValue);}
+                obj1_list[MAX_LOOP-1-loop] = String.format("%.4f",objectiveValue);
+                //if(loop%250==0) {
+                //    System.out.println("Objective Function: "+objectiveValue);
+                //}
                 //System.out.println(objectiveValue);
                 if(objectiveValue <= MIN_OBJECTIVE_VAL) break;
                 else if (Math.abs(objFuncPrev_1 - objectiveValue) <= 0.00001) {
@@ -360,6 +364,15 @@ public class Factorization implements Runnable {
             }
         }
         long elapsedTime_1 = System.currentTimeMillis() - start;
+        try{
+            CSVWriter writer = new CSVWriter(new FileWriter("C:\\Users\\asus\\Desktop\\obj1.csv", false));
+            writer.writeNext(obj1_list);
+            writer.close();
+            this.mdc.insertLog("Model saved in csv\n");
+        } catch(Exception e) {
+            e.printStackTrace();
+        } 
+        
         
         this.mdc.insertLog("#3.2 Entering Optimization Loop process\n"
                 + "# Process No. 2 Detail:\n"
@@ -367,6 +380,7 @@ public class Factorization implements Runnable {
                 + "# Method: Factorization with two Matrix Factor-User & Ingredients\n"
         );
         start = System.currentTimeMillis();  
+        String[] obj2_list = new String[1000];
         try {
             int loop = MAX_LOOP;
             while (loop-- > 0) {
@@ -397,6 +411,7 @@ public class Factorization implements Runnable {
                         this.userMap,
                         this.recipeMap
                 );
+                obj2_list[MAX_LOOP-1-loop] = String.format("%.4f",objectiveValue);
                 System.out.println("Objective Function: "+objectiveValue);
                 if (objectiveValue <= MIN_OBJECTIVE_VAL) {
                     break;
@@ -436,6 +451,15 @@ public class Factorization implements Runnable {
         }
         long elapsedTime_2 = System.currentTimeMillis() - start;
 
+        try{
+            CSVWriter writer = new CSVWriter(new FileWriter("C:\\Users\\asus\\Desktop\\obj2.csv", false));
+            writer.writeNext(obj2_list);
+            writer.close();
+            this.mdc.insertLog("Model saved in csv\n");
+        } catch(Exception e) {
+            e.printStackTrace();
+        } 
+        
         double[][] model1 = userFactor.multiply(recipeFactor.transpose());
         double[][] model2 = MatrixUtil.multiplyWithTransposing(
                 MatrixUtil.multiplyWithTransposing(userFactor_2.getEntry(), ingredientFactor.getEntry(), false),

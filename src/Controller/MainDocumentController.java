@@ -249,7 +249,7 @@ public class MainDocumentController implements Initializable {
                     + "#   - Max Iteration      : "+max_iteration.getText()+"\n"
                     + "#   - Lambda Value       : "+lambda_value.getText()+"\n"
                     + "#   - Learning Rate Type : "+LR_type+"\n"
-                    + "#   - Learning Rate Value: "+(LR_Value.getText().length() < 1 ? "-" : LR_Value.getText())+"\n"
+                    + "#   - Learning Rate Value: "+(LR_type.equals("Fixed") ? LR_Value.getText() : "1/t")+"\n"
                     );
             this.isParameterSet = true;
             
