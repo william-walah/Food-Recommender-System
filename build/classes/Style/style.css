@@ -13,3 +13,11 @@
 .predicted_rate.table-cell{
     -fx-text-fill: #ab280e;
 }
+
+.top_n_container{
+    -fx-background-color: #b3c5e8;
+}
+
+.error_input{
+    -fx-text-box-border: #f50000;
+}

@@ -20,6 +20,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -54,6 +56,7 @@ import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
+import javafx.scene.layout.Pane;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
 import javafx.util.Callback;
@@ -73,16 +76,16 @@ public class MainDocumentController implements Initializable {
     private Label programStatus;
 
     @FXML
-    private TableView<Recipe> recipes_table;
+    private TableView<Recipe> custom_user_table;
     
     @FXML
-    private TableColumn<Recipe, String> recipeCol;
+    private TableColumn<Recipe, String> cu_recipesCol;
 
     @FXML
-    private TableColumn<Recipe, String> ingredientsCol;
+    private TableColumn<Recipe, String> cu_ingredientsCol;
 
     @FXML
-    private TableColumn<Recipe, String> ratingCol;
+    private TableColumn<Recipe, String> cu_ratingCol;
 
     @FXML
     private TableView<RecipePredicted> recommendation_table;
@@ -136,7 +139,7 @@ public class MainDocumentController implements Initializable {
     private ToggleGroup learning_rate;
 
     @FXML
-    private Label LR_label;
+    private Label max_recipe;
 
     @FXML
     private TextField LR_Value;
@@ -149,12 +152,15 @@ public class MainDocumentController implements Initializable {
 
     @FXML
     private TextField lambda_value;
-     
-    @FXML
-    private Tab recom_tab;
     
     @FXML
-    private Tab custom_recom_tab;
+    private Pane top_n_container;
+
+    @FXML
+    private TextField top_n_input;
+
+    @FXML
+    private TextArea top_n_ta;
     
     private ObservableList<Recipe> data_recipe;
     private ObservableList<User> data_user;
@@ -162,11 +168,13 @@ public class MainDocumentController implements Initializable {
     private Factorization firstProcess = new Factorization(this);
     private Factorization secondProcess;
     private String userIdChoice;
-    private String LR_type;
+    private String LR_type = "Fixed";
     private boolean isParameterSet = false;
     private boolean isFirstProcessFactorized = false;
     private boolean isSecondProcessFactorized = false;
     private boolean isInProcess = false;
+    private final int MAX_INT = 1000000;
+    private int RECIPE_SIZE = 0;
 
     /**
      * Initializes the controller class.
@@ -176,6 +184,8 @@ public class MainDocumentController implements Initializable {
         this.mainTable.setDisable(true);
         this.programStatus.setText("reading data...");
         boolean isPreprocessed = firstProcess.isPreprocessed();
+        this.RECIPE_SIZE = firstProcess.getRecipeSize();
+        this.top_n_container.setVisible(false);
         if (isPreprocessed) {
             this.programStatus.setText("success reading view data & initializing dataset");
             secondProcess = firstProcess.copy();
@@ -191,7 +201,8 @@ public class MainDocumentController implements Initializable {
                 if (learning_rate.getSelectedToggle() != null) {
                     RadioButton selectedRadioButton = (RadioButton) learning_rate.getSelectedToggle();
                     LR_type = selectedRadioButton.getText();
-                    alterLabelField(selectedRadioButton.getText());
+                    if(selectedRadioButton.getText().equals("Fixed")) disableField(LR_Value,false);
+                    else disableField(LR_Value,true);
                 }
             }
         });
@@ -204,20 +215,102 @@ public class MainDocumentController implements Initializable {
             }
             return null;
         }));
+        latent_size.focusedProperty().addListener(new ChangeListener<Boolean>() {
+            @Override
+            public void changed(ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue)
+            {
+                if (!newPropertyValue)
+                {
+                    String newValue = latent_size.getText().replaceFirst("^0+(?!$)", "");
+                    if(newValue.length() > 7) newValue = MAX_INT+"";
+                    else if(newValue.length() == 7 && Integer.parseInt(newValue) > MAX_INT) newValue = MAX_INT+"";
+                    else newValue = newValue.equals("") || newValue.equals("0") ? "1" : Integer.parseInt(newValue)+"";
+                    latent_size.setText(newValue);
+                }
+            }
+        });
+        
         max_iteration.setTextFormatter(new TextFormatter<>(change -> {
             if(change.getText().matches("([0-9]*)?")){
                 return change;
             }
             return null;
         }));
+        max_iteration.focusedProperty().addListener(new ChangeListener<Boolean>() {
+            @Override
+            public void changed(ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue)
+            {
+                if (!newPropertyValue)
+                {
+                    String newValue = max_iteration.getText().replaceFirst("^0+(?!$)", "");
+                    if(newValue.length() > 7) newValue = MAX_INT+"";
+                    else if(newValue.length() == 7 && Integer.parseInt(newValue) > MAX_INT) newValue = MAX_INT+"";
+                    else newValue = newValue.equals("") || newValue.equals("0") ? "1" : Integer.parseInt(newValue)+"";
+                    max_iteration.setText(newValue);
+                }
+            }
+        });
+        
+        top_n_input.setTextFormatter(new TextFormatter<>(change -> {
+            if(change.getText().matches("([0-9]*)?")){
+                return change;
+            }
+            return null;
+        }));
+        top_n_input.focusedProperty().addListener(new ChangeListener<Boolean>() {
+            @Override
+            public void changed(ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue)
+            {
+                if (!newPropertyValue)
+                {
+                    String newValue = top_n_input.getText().replaceFirst("^0+(?!$)", "");
+                    if(newValue.length() > (RECIPE_SIZE+"").length()) newValue = RECIPE_SIZE+"";
+                    top_n_input.setText(newValue);
+                }
+            }
+        });
+
         lambda_value.textProperty().addListener(new ChangeListener<String>() {
             @Override
             public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
                 if(!newValue.matches("\\d*(\\.\\d*)?")) {
                     lambda_value.setText(oldValue);
+                } 
+            }
+        });
+        lambda_value.focusedProperty().addListener(new ChangeListener<Boolean>() {
+            @Override
+            public void changed(ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue)
+            {
+                if (!newPropertyValue)
+                {
+                    if(lambda_value.getText().equals("")) {
+                        lambda_value.setText("0.000001");
+                        return;
+                    }
+                    String[] currValue = lambda_value.getText().split("\\.");
+                    currValue[0] = currValue[0].replaceFirst("^0+(?!$)", "");
+                    String frontValue = currValue[0];
+                    if(currValue[0].length() >= 7){
+                        frontValue = MAX_INT+"";
+                    } 
+                    
+                    String backValue = "";
+                    if(currValue.length > 1){
+                        backValue = currValue[1];
+                        if(backValue.length()>6) {
+                            backValue = "000001";
+                        }
+                    } else {    
+                        backValue = "0";
+                    }
+                    
+                    String newValue = frontValue+"."+backValue;
+                    lambda_value.setText(newValue);
                 }
             }
         });
+        
         LR_Value.textProperty().addListener(new ChangeListener<String>() {
             @Override
             public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
@@ -226,23 +319,77 @@ public class MainDocumentController implements Initializable {
                 }
             }
         });
+        LR_Value.focusedProperty().addListener(new ChangeListener<Boolean>() {
+            @Override
+            public void changed(ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue)
+            {
+                if (!newPropertyValue)
+                {
+                    if(LR_Value.getText().equals("")) {
+                        LR_Value.setText("0.000001");
+                        return;
+                    }
+                    String[] currValue = LR_Value.getText().split("\\.");
+                    currValue[0] = currValue[0].replaceFirst("^0+(?!$)", "");
+                    String frontValue = currValue[0];
+                    if(currValue[0].length() >= 7){
+                        frontValue = MAX_INT+"";
+                    } 
+                    
+                    String backValue = "";
+                    if(currValue.length > 1){
+                        backValue = currValue[1];
+                        if(backValue.length()>6) {
+                            backValue = "000001";
+                        }
+                    } else {    
+                        backValue = "0";
+                    }
+                    
+                    String newValue = frontValue+"."+backValue;
+                    LR_Value.setText(newValue);
+                }
+            }
+        });
+
     }
 
     @FXML
     private void saveParameter(ActionEvent event){
         Boolean[] check = new Boolean[4];
-        check[0] = latent_size.getText().length() < 1 ? false : true;
-        check[1] = max_iteration.getText().length() < 1 ? false : true;
-        check[2] = lambda_value.getText().length() < 1 ? false : true;
+        int latent_size_val = !latent_size.getText().equals("") ? Integer.parseInt(latent_size.getText()) : 0;
+        int max_iteration_val = !max_iteration.getText().equals("") ? Integer.parseInt(max_iteration.getText()) : 0;
+        double lambda_val = !lambda_value.getText().equals("") ? Double.parseDouble(lambda_value.getText()) : 0.0;
+        double learning_rate_val = !LR_Value.getText().equals("") ? Double.parseDouble(LR_Value.getText()) : 0.0;
+
+        check[0] = latent_size_val > 0 && latent_size_val <= MAX_INT
+                    ? true
+                    : false;
+        check[1] = max_iteration_val > 0 && max_iteration_val <= MAX_INT
+                    ? true
+                    : false;
+        check[2] = lambda_val > 0.0 && lambda_val < (MAX_INT+1)*1.0
+                    ? true 
+                    : false;
         check[3] = LR_type.equals("Fixed") 
-                ? LR_Value.getText().length() < 1
-                    ? false
-                    : true
-                : true;
+                    ? learning_rate_val > 0.0 && learning_rate_val < (MAX_INT+1)*1.0
+                        ? true
+                        : false
+                    : true;
+        
         if(Arrays.asList(check).contains(false)){
             //some field is empty   
+            if(!check[0]) latent_size.getStyleClass().add("error_input");
+            if(!check[1]) max_iteration.getStyleClass().add("error_input");
+            if(!check[2]) lambda_value.getStyleClass().add("error_input");
+            if(!check[3]) LR_Value.getStyleClass().add("error_input");
             this.programStatus.setText("WARNING: can't save parameter value, Some parameter field is empty.");
         } else {
+            latent_size.getStyleClass().remove("error_input");
+            max_iteration.getStyleClass().remove("error_input");
+            lambda_value.getStyleClass().remove("error_input");
+            LR_Value.getStyleClass().remove("error_input");
+            
             this.programStatus.setText("Success in setting parameter.");
             insertLog("# Success in setting the parameter: \n"
                     + "#   - Latent Size        : "+latent_size.getText()+"\n"
@@ -314,12 +461,12 @@ public class MainDocumentController implements Initializable {
             custom_recom.setDisable(true);
             startBtn.setDisable(true);
             param_save.setDisable(true);
-            recipes_table.setDisable(true);
+            custom_user_table.setDisable(true);
             isInProcess = true;
             // create hash map of new custom rating
             HashMap<String, String> customRating = new HashMap<String,String>();
             Pattern zero = Pattern.compile("[0](\\.(00|0))?"); //filter non zero
-            ObservableList<Recipe> userRating = this.recipes_table.getItems();
+            ObservableList<Recipe> userRating = this.custom_user_table.getItems();
             for(Recipe curr: userRating){
                 if(!zero.matcher(curr.getUserRating()).matches()){ //not match regex == not 0 | 0.0 | 0.00
                     customRating.put(curr.getId(),curr.getUserRating());
@@ -341,9 +488,11 @@ public class MainDocumentController implements Initializable {
                             custom_recom.setDisable(false);
                             startBtn.setDisable(false);
                             param_save.setDisable(false);
-                            recipes_table.setDisable(false);
+                            custom_user_table.setDisable(false);
+                            top_n_container.setVisible(true);
                             isSecondProcessFactorized = true;
                             isInProcess = false;
+                            max_recipe.setText("Max. "+RECIPE_SIZE);
                             //show recommendation
                             updateCustomRecommendationTable();
                         } catch (InterruptedException ie) {
@@ -357,8 +506,8 @@ public class MainDocumentController implements Initializable {
                 custom_recom.setDisable(false);
                 startBtn.setDisable(false);
                 param_save.setDisable(false);
-                recipes_table.setDisable(false);
-                this.programStatus.setText("WARNING: you did not give any rating, please gives rating at least 5 rating.");
+                custom_user_table.setDisable(false);
+                this.programStatus.setText("WARNING: please gives rating at least 5 rating.");
             }
         } else{
             if(isInProcess) this.programStatus.setText("WARNING: another factorization is in process.");
@@ -380,7 +529,7 @@ public class MainDocumentController implements Initializable {
         File file = fileChooser.showOpenDialog(theStage);
         
         if(file != null){
-            this.recipes_table.setDisable(!this.recipes_table.isDisable());
+            this.custom_user_table.setDisable(!this.custom_user_table.isDisable());
             Thread t = new Thread(){
                 @Override
                 public void run(){
@@ -394,7 +543,7 @@ public class MainDocumentController implements Initializable {
                         }
                         csvReader.close();
                         if(data.size()>0){
-                            ObservableList<Recipe> customeRating = recipes_table.getItems();
+                            ObservableList<Recipe> customeRating = custom_user_table.getItems();
                             for(Recipe curr: customeRating){
                                 String id = curr.getId();
                                 curr.setUserRating(data.get(id));
@@ -403,8 +552,8 @@ public class MainDocumentController implements Initializable {
                     } catch(Exception e){
                         e.printStackTrace();
                     } finally{
-                        recipes_table.refresh();
-                        recipes_table.setDisable(!recipes_table.isDisable());
+                        custom_user_table.refresh();
+                        custom_user_table.setDisable(!custom_user_table.isDisable());
                     }
                 }
             };
@@ -427,7 +576,7 @@ public class MainDocumentController implements Initializable {
 
         if (file != null) {
             //do file save process
-            ObservableList<Recipe> customeRating = this.recipes_table.getItems();
+            ObservableList<Recipe> customeRating = this.custom_user_table.getItems();
             List<String[]> dataCsv = new ArrayList<String[]>();
             for(Recipe curr: customeRating){
                 String[] d = new String[2]; 
@@ -449,24 +598,80 @@ public class MainDocumentController implements Initializable {
             //do nothing
         }
     }
-        
+     
+    @FXML
+    private void viewTopRecommendation(ActionEvent event){
+        int input = Integer.parseInt(top_n_input.getText());
+        if(input > secondProcess.getRecipeSize()){
+            this.programStatus.setText("Jumlah rekomendasi yang di inginkan melebihi banyak resep. Berikan input yang sesuai.");
+        } else {
+            this.programStatus.setText("");
+            String str = "Top-"+top_n_input.getText()+" rekomendasi anda:\n";
+            // copy instance
+            ObservableList<RecipePredicted> tableList = this.customize_result.getItems();
+            List<RecipePredicted> listOfPrediction = new ArrayList<>();
+            for(RecipePredicted curr: tableList){
+                listOfPrediction.add(new RecipePredicted(
+                        curr.getRecipeName(),
+                        curr.getActualRating(),
+                        curr.getFirstRating(),
+                        curr.getSecondRating()
+                ));
+            }
+            Comparator<RecipePredicted> compareFirstRating = (o1, o2) -> Double.compare(o2.getFirstRatingAsDouble(), o1.getFirstRatingAsDouble());
+            Comparator<RecipePredicted> compareSecondRating = (o1, o2) -> Double.compare(o2.getSecondRatingAsDouble(), o1.getSecondRatingAsDouble());
+            str +="\n";
+            //sorted by first method rating
+            Collections.sort(listOfPrediction, compareFirstRating);
+            str +="   1. Berdasarkan Metode Rekomendasi Pertama:\n";
+            int count = 0;
+            for(RecipePredicted curr: listOfPrediction){
+                if(count==input) break;
+                str+="     - "+curr.getRecipeName()+", "+curr.getFirstRating()+"\n";
+                count++;
+            }
+            str+="\n";
+            //sorted by first method rating
+            Collections.sort(listOfPrediction, compareSecondRating);
+            str +="   2. Berdasarkan Metode Rekomendasi Kedua:\n";
+            count = 0;
+            for(RecipePredicted curr: listOfPrediction){
+                if(count==input) break;
+                str+="     - "+curr.getRecipeName()+", "+curr.getSecondRating()+"\n";
+                count++;
+            }
+            final String res = str;
+            Platform.runLater(new Runnable() {
+                @Override
+                public void run() {
+                    DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+                    LocalDateTime now = LocalDateTime.now();
+                    String time = (dtf.format(now));
+                    top_n_ta.appendText("~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+                    top_n_ta.appendText("# Time: "+time+"\n");
+                    top_n_ta.appendText(res);
+                    top_n_ta.appendText("~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n");
+                }
+            });
+        }
+    }
     
     private void initializeTable() {
         // custom user rating recipe table
         this.data_recipe = FXCollections.observableList(firstProcess.getRecipes());
-        this.recipeCol.setCellValueFactory(
+        this.cu_recipesCol.setCellValueFactory(
                 new PropertyValueFactory<Recipe, String>("name"));
-        this.ingredientsCol.setCellValueFactory(cellData
+        this.cu_ingredientsCol.setCellValueFactory(cellData
                 -> new SimpleStringProperty(cellData.getValue().getIngredient())
         );
         // editable column
-        this.ratingCol.setCellValueFactory(
+        this.cu_ratingCol.setCellValueFactory(
                 new PropertyValueFactory<Recipe, String>("userRating"));
 
         // thanks to the person from referable link on the RatingEditingCell inner class
-        this.ratingCol.setCellFactory(col -> new RatingEditingCell());
+        this.cu_ratingCol.setCellFactory(col -> new RatingEditingCell());
         
-        this.recipes_table.setItems(this.data_recipe);
+        this.custom_user_table.setItems(this.data_recipe);
 
         // user id table data
         this.data_user = FXCollections.observableList(firstProcess.getUsers());
@@ -527,16 +732,8 @@ public class MainDocumentController implements Initializable {
         });
     }
     
-    private void alterLabelField(String text){
-        if(text.equals("Fixed")) {
-            LR_label.setText("Nilai Learning Rate");
-            LR_label.setVisible(true);
-            LR_Value.setVisible(true);
-        }
-        else {
-            LR_label.setVisible(false);
-            LR_Value.setVisible(false);
-        }
+    private void disableField(TextField t, boolean isDisable){
+        t.setDisable(isDisable);
     }
     
     public void firstProcessDone(){

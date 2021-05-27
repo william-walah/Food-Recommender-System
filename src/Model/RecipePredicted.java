@@ -57,4 +57,7 @@ public class RecipePredicted{
     public void setActualRating(String s){this.actualRating.set(s);}
     public void setFirstRating(String s){this.firstRating.set(s);}
     public void setSecondRating(String s){this.secondRating.set(s);}
+
+    public double getFirstRatingAsDouble(){return Double.parseDouble(this.firstRating.get());}
+    public double getSecondRatingAsDouble(){return Double.parseDouble(this.secondRating.get());}
 }

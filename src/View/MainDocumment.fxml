@@ -11,6 +11,10 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.ToggleGroup?>
 <?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.text.Font?>
 
@@ -27,53 +31,89 @@
                               <Font name="Arial Bold" size="36.0" />
                            </font>
                         </Label>
-                        <Label layoutX="25.0" layoutY="114.0" prefHeight="21.0" prefWidth="177.0" text="Panjang Vektor Laten">
+                        <Pane layoutX="19.0" layoutY="96.0" prefHeight="49.0" prefWidth="502.0">
+                           <children>
+                              <Label prefHeight="21.0" prefWidth="177.0" text="Panjang Vektor Laten">
+                                 <font>
+                                    <Font name="Arial" size="18.0" />
+                                 </font>
+                              </Label>
+                              <TextField fx:id="latent_size" layoutX="280.0" layoutY="-1.0" prefHeight="31.0" prefWidth="221.0" stylesheets="@../Style/style.css" />
+                              <Label layoutX="280.0" layoutY="29.0" text="*1 s.d. 1000000" textFill="#f80000">
+                                 <font>
+                                    <Font name="System Italic" size="11.0" />
+                                 </font>
+                              </Label>
+                           </children>
+                        </Pane>
+                        <Pane layoutX="19.0" layoutY="163.0" prefHeight="49.0" prefWidth="502.0">
+                           <children>
+                              <Label prefHeight="21.0" prefWidth="133.0" text="Maksimal Iterasi">
+                                 <font>
+                                    <Font name="Arial" size="18.0" />
+                                 </font>
+                              </Label>
+                              <TextField fx:id="max_iteration" layoutX="281.0" prefHeight="31.0" prefWidth="221.0" stylesheets="@../Style/style.css" />
+                              <Label layoutX="281.0" layoutY="30.0" text="*1 s.d. 1000000" textFill="#f80000">
+                                 <font>
+                                    <Font name="System Italic" size="11.0" />
+                                 </font>
+                              </Label>
+                           </children>
+                        </Pane>
+                        <Pane layoutX="19.0" layoutY="224.0" prefHeight="49.0" prefWidth="502.0">
+                           <children>
+                              <Label prefHeight="21.0" prefWidth="121.0" text="Nilai Lambda">
+                                 <font>
+                                    <Font name="Arial" size="18.0" />
+                                 </font>
+                              </Label>
+                              <TextField fx:id="lambda_value" layoutX="280.0" layoutY="-1.0" prefHeight="31.0" prefWidth="222.0" stylesheets="@../Style/style.css" />
+                              <Label layoutX="280.0" layoutY="29.0" text="*0.000001 s.d. 10^6" textFill="#f80000">
+                                 <font>
+                                    <Font name="System Italic" size="11.0" />
+                                 </font>
+                              </Label>
+                           </children>
+                        </Pane>
+                        <Label layoutX="17.0" layoutY="287.0" prefHeight="21.0" prefWidth="217.0" text="Sifat Learning Rate">
                            <font>
                               <Font name="Arial" size="18.0" />
                            </font>
                         </Label>
-                        <TextField fx:id="latent_size" layoutX="297.0" layoutY="109.0" prefHeight="31.0" prefWidth="221.0" />
-                        <Label layoutX="25.0" layoutY="158.0" prefHeight="21.0" prefWidth="133.0" text="Maksimal Iterasi">
-                           <font>
-                              <Font name="Arial" size="18.0" />
-                           </font>
-                        </Label>
-                        <TextField fx:id="max_iteration" layoutX="297.0" layoutY="153.0" prefHeight="31.0" prefWidth="221.0" />
-                        <Label layoutX="25.0" layoutY="203.0" prefHeight="21.0" prefWidth="121.0" text="Nilai Lambda">
-                           <font>
-                              <Font name="Arial" size="18.0" />
-                           </font>
-                        </Label>
-                        <TextField fx:id="lambda_value" layoutX="297.0" layoutY="198.0" prefHeight="31.0" prefWidth="222.0" />
-                        <Label layoutX="25.0" layoutY="248.0" prefHeight="21.0" prefWidth="217.0" text="Sifat Learning Rate">
-                           <font>
-                              <Font name="Arial" size="18.0" />
-                           </font>
-                        </Label>
-                        <RadioButton layoutX="297.0" layoutY="248.0" mnemonicParsing="false" text="Fixed">
+                        <RadioButton layoutX="305.0" layoutY="287.0" mnemonicParsing="false" selected="true" text="Fixed">
                            <toggleGroup>
                               <ToggleGroup fx:id="learning_rate" />
                            </toggleGroup>
                         </RadioButton>
-                        <RadioButton layoutX="396.0" layoutY="248.0" mnemonicParsing="false" text="Iteratively" toggleGroup="$learning_rate" />
-                        <Label fx:id="LR_label" layoutX="25.0" layoutY="292.0" prefHeight="21.0" prefWidth="217.0" text="Nilai Learning Rate" visible="false">
-                           <font>
-                              <Font name="Arial" size="18.0" />
-                           </font>
-                        </Label>
-                        <TextField fx:id="LR_Value" layoutX="297.0" layoutY="287.0" prefHeight="31.0" prefWidth="222.0" visible="false" />
+                        <RadioButton layoutX="404.0" layoutY="287.0" mnemonicParsing="false" text="Iteratively" toggleGroup="$learning_rate" />
+                        <Pane layoutX="19.0" layoutY="339.0" prefHeight="49.0" prefWidth="502.0">
+                           <children>
+                              <Label fx:id="LR_label" prefHeight="21.0" prefWidth="217.0" text="Nilai Learning Rate">
+                                 <font>
+                                    <Font name="Arial" size="18.0" />
+                                 </font>
+                              </Label>
+                              <TextField fx:id="LR_Value" layoutX="280.0" layoutY="-1.0" prefHeight="31.0" prefWidth="222.0" />
+                              <Label layoutX="280.0" layoutY="30.0" text="*0.000001 s.d. 10^6" textFill="#f80000">
+                                 <font>
+                                    <Font name="System Italic" size="11.0" />
+                                 </font>
+                              </Label>
+                           </children>
+                        </Pane>
                         <Label layoutX="640.0" layoutY="33.0" text="Process Log">
                            <font>
                               <Font name="Arial Italic" size="18.0" />
                            </font>
                         </Label>
                         <TextArea fx:id="log_field" editable="false" layoutX="640.0" layoutY="70.0" prefHeight="514.0" prefWidth="619.0" styleClass="logging_field" stylesheets="@../Style/style.css" />
-                        <Button fx:id="startBtn" layoutX="328.0" layoutY="327.0" mnemonicParsing="false" onAction="#startFactorization" prefHeight="33.0" prefWidth="182.0" text="Mulai Faktorisasi" textFill="#9a1b1b">
+                        <Button fx:id="startBtn" layoutX="324.0" layoutY="411.0" mnemonicParsing="false" onAction="#startFactorization" prefHeight="33.0" prefWidth="182.0" text="Mulai Faktorisasi" textFill="#9a1b1b">
                            <font>
                               <Font name="Arial Bold" size="18.0" />
                            </font>
                         </Button>
-                        <Button fx:id="param_save" layoutX="108.0" layoutY="327.0" mnemonicParsing="false" onAction="#saveParameter" text="Simpan Parameter">
+                        <Button fx:id="param_save" layoutX="104.0" layoutY="411.0" mnemonicParsing="false" onAction="#saveParameter" text="Simpan Parameter">
                            <font>
                               <Font name="Arial Bold" size="18.0" />
                            </font>
@@ -125,27 +165,27 @@
             <content>
               <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                      <children>
-                        <StackPane layoutX="37.0" layoutY="45.0" prefHeight="441.0" prefWidth="603.0">
+                        <StackPane layoutX="37.0" layoutY="45.0" prefHeight="362.0" prefWidth="603.0">
                            <children>
-                              <TableView fx:id="recipes_table" editable="true" prefHeight="444.0" prefWidth="606.0">
+                              <TableView fx:id="custom_user_table" editable="true" prefHeight="444.0" prefWidth="606.0">
                                 <columns>
-                                  <TableColumn fx:id="recipeCol" prefWidth="139.0" text="Recipes" />
-                                  <TableColumn fx:id="ingredientsCol" prefWidth="377.0" text="Ingredients" />
-                                    <TableColumn fx:id="ratingCol" prefWidth="87.0" resizable="false" text="Rate" />
+                                  <TableColumn fx:id="cu_recipesCol" prefWidth="139.0" text="Recipes" />
+                                  <TableColumn fx:id="cu_ingredientsCol" prefWidth="377.0" text="Ingredients" />
+                                    <TableColumn fx:id="cu_ratingCol" prefWidth="87.0" resizable="false" text="Your Rate" />
                                 </columns>
                               </TableView>
                            </children>
                         </StackPane>
-                        <Button fx:id="custom_recom" layoutX="470.0" layoutY="511.0" mnemonicParsing="false" onAction="#doCustomeRecommendation" prefHeight="31.0" prefWidth="170.0" text="Recommend Me!" textFill="#0e540a">
+                        <Button fx:id="custom_recom" layoutX="470.0" layoutY="439.0" mnemonicParsing="false" onAction="#doCustomeRecommendation" prefHeight="31.0" prefWidth="170.0" text="Recommend Me!" textFill="#0e540a">
                            <font>
                               <Font name="Arial Bold" size="15.0" />
                            </font></Button>
-                        <Button layoutX="37.0" layoutY="511.0" mnemonicParsing="false" onAction="#saveCustomRating" prefHeight="31.0" prefWidth="170.0" text="Save to CSV" textFill="#080d5b">
+                        <Button layoutX="37.0" layoutY="439.0" mnemonicParsing="false" onAction="#saveCustomRating" prefHeight="31.0" prefWidth="170.0" text="Save to CSV" textFill="#080d5b">
                            <font>
                               <Font name="Arial Bold" size="15.0" />
                            </font>
                         </Button>
-                        <Button layoutX="254.0" layoutY="511.0" mnemonicParsing="false" onAction="#loadCustomRating" prefHeight="31.0" prefWidth="170.0" text="Load Rating Data" textFill="#5b0909">
+                        <Button layoutX="254.0" layoutY="439.0" mnemonicParsing="false" onAction="#loadCustomRating" prefHeight="31.0" prefWidth="170.0" text="Load Rating Data" textFill="#5b0909">
                            <font>
                               <Font name="Arial Bold" size="15.0" />
                            </font>
@@ -155,7 +195,7 @@
                               <Font name="Arial Bold" size="18.0" />
                            </font>
                         </Label>
-                        <StackPane layoutX="710.0" layoutY="80.0" prefHeight="529.0" prefWidth="535.0">
+                        <StackPane layoutX="710.0" layoutY="80.0" prefHeight="391.0" prefWidth="535.0">
                            <children>
                               <TableView fx:id="customize_result" prefHeight="200.0" prefWidth="200.0">
                                 <columns>
@@ -166,6 +206,39 @@
                               </TableView>
                            </children>
                         </StackPane>
+                        <Pane fx:id="top_n_container" layoutX="37.0" layoutY="490.0" prefHeight="146.0" prefWidth="1214.0" styleClass="top_n_container" stylesheets="@../Style/style.css">
+                           <children>
+                              <GridPane layoutX="29.0" layoutY="28.0" prefHeight="90.0" prefWidth="605.0">
+                                <columnConstraints>
+                                  <ColumnConstraints halignment="LEFT" hgrow="SOMETIMES" maxWidth="472.0" minWidth="10.0" prefWidth="454.0" />
+                                  <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" maxWidth="297.0" minWidth="10.0" prefWidth="151.0" />
+                                </columnConstraints>
+                                <rowConstraints>
+                                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                </rowConstraints>
+                                 <children>
+                                    <TextField fx:id="top_n_input" prefHeight="31.0" prefWidth="493.0" GridPane.rowIndex="1" />
+                                    <Button fx:id="top_n_btn" mnemonicParsing="false" onAction="#viewTopRecommendation" prefHeight="31.0" prefWidth="93.0" text="Lihat" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                                       <font>
+                                          <Font name="Arial Bold" size="15.0" />
+                                       </font>
+                                    </Button>
+                                    <Label text="Masukkan Nilai untuk Melihat N Rekomendasi Teratas">
+                                       <font>
+                                          <Font name="Arial Bold" size="15.0" />
+                                       </font>
+                                    </Label>
+                                    <Label fx:id="max_recipe" text="Max. " textFill="#ab2020" GridPane.columnIndex="1">
+                                       <font>
+                                          <Font name="Arial Bold" size="15.0" />
+                                       </font>
+                                    </Label>
+                                 </children>
+                              </GridPane>
+                              <TextArea fx:id="top_n_ta" layoutX="678.0" layoutY="15.0" prefHeight="116.0" prefWidth="522.0" />
+                           </children>
+                        </Pane>
                      </children></AnchorPane>
             </content>
           </Tab>

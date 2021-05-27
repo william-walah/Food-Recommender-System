@@ -18,12 +18,12 @@ public class Recipe {
     private String id;
     private SimpleStringProperty name;
     private SimpleStringProperty userRating;
-    private Ingredient i;
+    private Ingredient ingredient;
 
     public Recipe(String... data) {
         this.id = data[0];
         this.name = new SimpleStringProperty(data[1]);
-        this.i = new Ingredient(data[2],data[3]);
+        this.ingredient = new Ingredient(data[2],data[3]);
         this.userRating = new SimpleStringProperty("0");
     }
 
@@ -49,7 +49,7 @@ public class Recipe {
     
     public String getIngredient() {
         String res = "";
-        for (String i : this.i.getIngredients()) {
+        for (String i : this.ingredient.getIngredients()) {
             res += i+", ";
         }
         res = res.substring(0,res.length()-2);
@@ -57,8 +57,8 @@ public class Recipe {
     }
     
     public Ingredient getIngredientObject() {
-        return this.i;
+        return this.ingredient;
     }
     
-    public int getIngredientLength(){return this.i.length();}
+    public int getIngredientLength(){return this.ingredient.length();}
 }

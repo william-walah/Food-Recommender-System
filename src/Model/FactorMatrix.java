@@ -34,11 +34,39 @@ public class FactorMatrix extends Matrix{
         this.type = t;
         
         //initialize entry between 1.0 - 5.0
-        Random r = new Random();
-        Supplier<Double> randomValue = () -> (double) (r.nextInt(5)+1);
-        for (int i = 0; i < entry.length; i++) {
-            entry[i] = Stream.generate(randomValue).limit(entry[i].length).mapToDouble(Double::valueOf).toArray();
-        }   
+//        Random r = new Random();
+//        Supplier<Double> randomValue = () -> (double) (r.nextInt(5)+1);
+//        for (int i = 0; i < entry.length; i++) {
+//            entry[i] = Stream.generate(randomValue).limit(entry[i].length).mapToDouble(Double::valueOf).toArray();
+//        }   
+        
+        //pengujian
+        double[][] newEntry = null;
+        if(this.type == FactorType.USER){
+            newEntry = new double[][]{{4,1},
+                {5,1},
+                {3,4},
+                {5,4}};
+        } else if(this.type == FactorType.RECIPES) {
+            newEntry = new double[][]{{2,3},
+                {1,2},
+                {5,2},
+                {1,1}};
+        } else {
+            newEntry = new double[][]{{4,1},
+                {5,1},
+                {3,4},
+                {5,4},
+                {2,3},
+                {1,2},
+                {5,2},
+                {1,1},
+                {3,3},
+                {1,3},
+                {5,1},
+                {3,4}};
+        }
+       this.entry = newEntry;
     }
     
     // unique for ingredient recipe matrix map
@@ -70,7 +98,7 @@ public class FactorMatrix extends Matrix{
             for (int j = 0; j < entry[i].length; j++) {
                 currFactor += Math.pow(entry[i][j],2);
             }
-            res += Math.sqrt(currFactor);
+            res += currFactor;
         }
         return res;
     }
