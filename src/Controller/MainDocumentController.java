@@ -185,7 +185,8 @@ public class MainDocumentController implements Initializable {
         this.programStatus.setText("reading data...");
         boolean isPreprocessed = firstProcess.isPreprocessed();
         this.RECIPE_SIZE = firstProcess.getRecipeSize();
-        this.top_n_container.setVisible(false);
+        this.max_recipe.setText("Max. "+RECIPE_SIZE);
+        this.top_n_container.setDisable(true);
         if (isPreprocessed) {
             this.programStatus.setText("success reading view data & initializing dataset");
             secondProcess = firstProcess.copy();
@@ -476,6 +477,7 @@ public class MainDocumentController implements Initializable {
             // using thread so that the UI is responding
             if(customRating.size()>=5){
                 secondProcess.addCustomUser("-1", customRating);
+                top_n_container.setDisable(true);
                 Thread mainThread = new Thread(secondProcess);
                 mainThread.start();
                 Thread afterFactorizationThread = new Thread(){
@@ -489,10 +491,9 @@ public class MainDocumentController implements Initializable {
                             startBtn.setDisable(false);
                             param_save.setDisable(false);
                             custom_user_table.setDisable(false);
-                            top_n_container.setVisible(true);
+                            top_n_container.setDisable(false);
                             isSecondProcessFactorized = true;
                             isInProcess = false;
-                            max_recipe.setText("Max. "+RECIPE_SIZE);
                             //show recommendation
                             updateCustomRecommendationTable();
                         } catch (InterruptedException ie) {
@@ -667,12 +668,11 @@ public class MainDocumentController implements Initializable {
         // editable column
         this.cu_ratingCol.setCellValueFactory(
                 new PropertyValueFactory<Recipe, String>("userRating"));
-
         // thanks to the person from referable link on the RatingEditingCell inner class
         this.cu_ratingCol.setCellFactory(col -> new RatingEditingCell());
-        
         this.custom_user_table.setItems(this.data_recipe);
 
+        
         // user id table data
         this.data_user = FXCollections.observableList(firstProcess.getUsers());
         this.userId_col.setCellValueFactory(

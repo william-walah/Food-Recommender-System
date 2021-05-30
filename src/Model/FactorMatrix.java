@@ -40,7 +40,7 @@ public class FactorMatrix extends Matrix{
 //            entry[i] = Stream.generate(randomValue).limit(entry[i].length).mapToDouble(Double::valueOf).toArray();
 //        }   
         
-        //pengujian
+        //pengujian metode 1
         double[][] newEntry = null;
         if(this.type == FactorType.USER){
             newEntry = new double[][]{{4,1},
@@ -53,18 +53,20 @@ public class FactorMatrix extends Matrix{
                 {5,2},
                 {1,1}};
         } else {
-            newEntry = new double[][]{{4,1},
-                {5,1},
-                {3,4},
-                {5,4},
-                {2,3},
-                {1,2},
-                {5,2},
-                {1,1},
-                {3,3},
-                {1,3},
-                {5,1},
-                {3,4}};
+            newEntry = new double[][]{
+                {2.0,1.0},
+                {1.0,3.0},
+                {5.0,3.0},
+                {2.0,4.0},
+                {5.0,5.0},
+                {4.0,4.0},
+                {4.0,4.0},
+                {2.0,4.0},
+                {2.0,5.0},
+                {3.0,2.0},
+                {4.0,1.0},
+                {3.0,5.0},    
+            };
         }
        this.entry = newEntry;
     }
@@ -85,6 +87,14 @@ public class FactorMatrix extends Matrix{
                 entry[rowIdx][colIdx] = 1.0;
             }
         }
+        
+        for (int i = 0; i < entry.length; i++) {
+            for (int j = 0; j < entry[i].length; j++) {
+                System.out.print(entry[i][j]+",");
+            }
+            System.out.println("");
+        }
+        System.out.println("");
     }
     
     public double[] getFactorByIndex(int i){

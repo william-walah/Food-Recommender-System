@@ -40,10 +40,7 @@ public class FactorizationUtil {
     public double objectiveFunction_m1(
             FactorMatrix user,
             FactorMatrix recipe,
-//            TrainMatrix trainM,
             List<Pair> trainPair
-//            HashMap<String, Integer> userMap,
-//            HashMap<String, Integer> recipeMap
     ) {
         TrainMatrix trainM = this.control.getTrainMatrix();
         HashMap<String, Integer> userMap = this.control.getUserMap();
@@ -64,7 +61,6 @@ public class FactorizationUtil {
         }
         System.out.println("Error without penalty: "+sumOfErrorSquared);
         double penalty = LAMBDA * (user.calculateVectorLength() + recipe.calculateVectorLength());
-//        System.out.println(String.format("%.3f",penalty));
         return sumOfErrorSquared + penalty;
     }
 
@@ -72,67 +68,7 @@ public class FactorizationUtil {
             FactorMatrix user,
             FactorMatrix recipe,
             List<Pair> trainPair
-//            HashMap<String, Integer> userMap,
-//            HashMap<String, Integer> recipeMap,
-//            HashMap<Integer, String> userMap_r,
-//            HashMap<Integer, String> recipeMap_r,
-//            TrainMatrix tm
     ) {
-        //update the user matrix factor value
-//        double[][] userVector = user.getEntry(); //reference
-//        for (int i = 0; i < userVector.length; i++) {
-//            double[] newLatent = MatrixUtil.vectorCalculation(
-//                    userVector[i], //previous value
-//                    calculateLearningValue_m1(
-//                            userVector[i],
-//                            i,
-//                            recipe,
-//                            trainPair,
-//                            recipeMap,
-//                            userMap_r,
-//                            FactorType.USER,
-//                            tm), //learning value
-//                    1); //addition
-//            //um... ubah value kalau lebih dari 5 jadi 5, kurang dari 0 jadi 0?
-//            for (int j = 0; j < newLatent.length; j++) {
-//                if (newLatent[j] > 5) {
-//                    newLatent[j] = 5.0;
-//                } else if (newLatent[j] < 0) {
-//                    newLatent[j] = 0.0;
-//                }
-//            }
-//            userVector[i] = newLatent;
-//        }
-//        //update the recipe matrix factor value
-//        double[][] recipeVetor = recipe.getEntry();
-//        for (int i = 0; i < recipeVetor.length; i++) {
-//            double[] newLatent = MatrixUtil.vectorCalculation(
-//                    recipeVetor[i], //previous value
-//                    calculateLearningValue_m1(
-//                            recipeVetor[i],
-//                            i,
-//                            user,
-//                            trainPair,
-//                            userMap,
-//                            recipeMap_r,
-//                            FactorType.RECIPES,
-//                            tm), //learning value
-//                    1); //addition
-//            for (int j = 0; j < newLatent.length; j++) {
-//                if (newLatent[j] > 5) {
-//                    newLatent[j] = 5.0;
-//                } else if (newLatent[j] < 0) {
-//                    newLatent[j] = 0.0;
-//                }
-//            }
-//            recipeVetor[i] = newLatent;
-//        }
-
-        HashMap<String, Integer> userMap = this.control.getUserMap();
-        HashMap<String, Integer> recipeMap = this.control.getRecipeMap();
-        HashMap<Integer, String> userMap_r = this.control.getUserMapReversed();
-        HashMap<Integer, String> recipeMap_r = this.control.getRecipeMapReversed();
-        TrainMatrix tm = this.control.getTrainMatrix();
         double[][] userM = new double[user.getRowLength()][user.getColLength()];
         for (int i = 0; i < userM.length; i++) {
             double[] newLatent = MatrixUtil.vectorCalculation(
@@ -142,13 +78,9 @@ public class FactorizationUtil {
                             i,
                             recipe,
                             trainPair,
-//                            recipeMap,
-//                            userMap_r,
                             FactorType.USER
-//                            tm), //learning value
                             ),
                     1); //addition
-            //um... ubah value kalau lebih dari 5 jadi 5, kurang dari 0 jadi 0?
             for (int j = 0; j < newLatent.length; j++) {
                 if (newLatent[j] > 5) {
                     newLatent[j] = 5.0;
@@ -168,10 +100,7 @@ public class FactorizationUtil {
                             i,
                             user,
                             trainPair,
-//                            userMap,
-//                            recipeMap_r,
                             FactorType.RECIPES
-//                            tm), //learning value
                     ),
                     1); //addition
             for (int j = 0; j < newLatent.length; j++) {
@@ -193,10 +122,7 @@ public class FactorizationUtil {
             int index,
             FactorMatrix fm,
             List<Pair> observable,
-            //HashMap<String, Integer> map, //either userMap, recipeMap, or ingredientsMap
-            //HashMap<Integer, String> reverseMap,
             FactorType type
-            //TrainMatrix trainM
     ) {
 
         //String targetId = reverseMap.get(index);
@@ -214,7 +140,6 @@ public class FactorizationUtil {
                 String userId = reverseMap.get(index);
                 trainM = this.control.getTrainMatrix();
                                                                                 
-                //filtered = observable.stream().filter(p -> p.getUser().equals(userId)).collect(Collectors.toList());
                 //calculate lambda times targeted latent vector
                 lambdaTarget = MatrixUtil.scalarMultiplication(LAMBDA, latentVector);
                 for (Pair curr: observable) {
@@ -224,9 +149,19 @@ public class FactorizationUtil {
                        double trainValue = trainM.getEntryByIndex(index, recipeIndex);
                        double error = trainValue - (MatrixUtil.vectorMultiplication(latentVector, pairLatent) / TRUNCATION_VAL);
                        //calculate error times pair latent
-                       //double[] errorTimesPair = MatrixUtil.scalarMultiplication(error, pairLatent);
-                       //res = MatrixUtil.vectorCalculation(res, errorTimesPair, 1);
-                       res = MatrixUtil.vectorCalculation(res, pairLatent, 1, false, error);   
+                       res = MatrixUtil.vectorCalculation(res, pairLatent, 1, 2, error);   
+                       
+                       /*
+                        what if: lambda target is added (minus in the formula)
+                        on each times error times pair calculated and then added to 
+                        res (the Sigma cover till these operation)
+                       
+                       res = MatrixUtil.vectorCalculation(res, 
+                               //error times pair minus lambda times curr latent vector
+                               MatrixUtil.vectorCalculation(pairLatent, lambdaTarget, 0, 1, error),
+                               1
+                       );
+                       */
                     }
                 }
                 res = MatrixUtil.vectorCalculation(res, lambdaTarget, 0);
@@ -237,7 +172,6 @@ public class FactorizationUtil {
                 String recipeId = reverseMap.get(index);
                 trainM = this.control.getTrainMatrix();
                 
-                //filtered = observable.stream().filter(p -> p.getRecipe().equals(recipeId)).collect(Collectors.toList());
                 //calculate lambda times targeted latent vector
                 lambdaTarget = MatrixUtil.scalarMultiplication(LAMBDA, latentVector);
                 for (Pair curr: observable) {
@@ -247,9 +181,19 @@ public class FactorizationUtil {
                         double trainValue = trainM.getEntryByIndex(user_index, index);
                         double error = trainValue - (MatrixUtil.vectorMultiplication(latentVector, pairLatent) / TRUNCATION_VAL);
                         //calculate error times pair latent
-                        //double[] errorTimesPair = MatrixUtil.scalarMultiplication(error, pairLatent);
-                        //res = MatrixUtil.vectorCalculation(res, errorTimesPair, 1);
-                        res = MatrixUtil.vectorCalculation(res, pairLatent, 1, false, error);
+                        res = MatrixUtil.vectorCalculation(res, pairLatent, 1, 2, error);
+                        
+                        /*
+                            what if: lambda target is added (minus in the formula)
+                            on each times error times pair calculated and then added to 
+                            res (the Sigma cover till these operation)
+                       
+                       res = MatrixUtil.vectorCalculation(res, 
+                               //error times pair minus lambda times curr latent vector
+                               MatrixUtil.vectorCalculation(pairLatent, lambdaTarget, 0, 1, error),
+                               1
+                       );
+                        */
                     }
                 }
                 res = MatrixUtil.vectorCalculation(res, lambdaTarget, 0);
@@ -266,12 +210,7 @@ public class FactorizationUtil {
             double[][] prediction,
             FactorMatrix user,
             FactorMatrix ingredient,
-//            FactorMatrix recipeIngredientMap,
-//            TrainMatrix trainM,
-           List<Pair> trainPair
-//            List<Recipe> listOfRecipe,
-//            HashMap<String, Integer> userMap,
-//            HashMap<String, Integer> recipeMap
+            List<Pair> trainPair
     ) {
         TrainMatrix trainM = this.control.getTrainMatrix();
         List<Recipe> listOfRecipe = this.control.getRecipes();
@@ -298,67 +237,9 @@ public class FactorizationUtil {
             FactorMatrix ingredient,
             FactorMatrix recipeIngredientMap,
             List<Pair> trainPair
-            //List<Recipe> recipes,
-            //HashMap<String, Integer> userMap,
-            //HashMap<String, Integer> recipeMap,
-            //HashMap<Integer, String> userMap_r,
-            //HashMap<Integer, String> recipeMap_r,
-            //TrainMatrix tm
     ) {
-        //update the user matrix factor value
-//        double[][] userVector = user.getEntry();
-//        for (int i = 0; i < userVector.length; i++) {
-//            //MatrixUtil.sumAll(new double[][]{userVector[i]});
-//            double[] newLatent = MatrixUtil.vectorCalculation(
-//                    userVector[i], //previous value
-//                    calcLearningValue_m2_user(
-//                            prediction,
-//                            userVector[i],
-//                            i,
-//                            ingredient,
-//                            recipeIngredientMap,
-//                            trainPair,
-//                            recipes,
-//                            recipeMap,
-//                            userMap_r,
-//                            tm), //learning value
-//                    1); //addition
-//            for (int j = 0; j < newLatent.length; j++) {
-//                if (newLatent[j] > 5.0) {
-//                    newLatent[j] = 5.0;
-//                } else if (newLatent[j] < 0.0) {
-//                    newLatent[j] = 0.0;
-//                }
-//            }
-//            userVector[i] = newLatent;
-//            //MatrixUtil.sumAll(new double[][]{userVector[i]});
-//        }
-//        //update the ingredients matrix factor value
-//        double[][] lvIngredientMatrix = calcLearningValue_m2_ingredient(
-//            prediction,
-//            ingredient.getEntry(),
-//            user,
-//            recipeIngredientMap,
-//            trainPair,
-//            recipes,
-//            userMap, 
-//            recipeMap,
-//            tm
-//        );
-//        //System.out.println(lvIngredientMatrix.length+ " | "+lvIngredientMatrix[0].length);
-//        ingredient.add(lvIngredientMatrix);
-//        //optimize value
-//        ingredient.optimizeAllValue();
-
-        List<Recipe> recipes = this.control.getRecipes();
-        HashMap<String, Integer> userMap = this.control.getUserMap();
-        HashMap<String, Integer> recipeMap = this.control.getRecipeMap();
-        HashMap<Integer, String> userMap_r = this.control.getUserMapReversed();
-        //HashMap<Integer, String> recipeMap_r = this.control.getIngredientMapReversed();
-        TrainMatrix tm = this.control.getTrainMatrix();
         double[][] userM = new double[user.getRowLength()][user.getColLength()];
         for (int i = 0; i < userM.length; i++) {
-            //MatrixUtil.sumAll(new double[][]{userVector[i]});
             double[] newLatent = MatrixUtil.vectorCalculation(
                     user.getFactorByIndex(i), //previous value
                     calcLearningValue_m2_user(
@@ -368,10 +249,6 @@ public class FactorizationUtil {
                             ingredient,
                             recipeIngredientMap,
                             trainPair
-                            //recipes,
-                            //recipeMap,
-                            //userMap_r,
-                            //tm), //learning value
                             ),
                     1); //addition
             for (int j = 0; j < newLatent.length; j++) {
@@ -382,7 +259,6 @@ public class FactorizationUtil {
                 }
             }
             userM[i] = newLatent;
-            //MatrixUtil.sumAll(new double[][]{userVector[i]});
         }
         //update the ingredients matrix factor value
         double[][] lvIngredientMatrix = calcLearningValue_m2_ingredient(
@@ -391,11 +267,9 @@ public class FactorizationUtil {
             user,
             recipeIngredientMap,
             trainPair
-            //recipes,
-            //userMap, 
-            //recipeMap,
-            //tm
         );
+//        System.out.println("lr_val");
+//        MatrixUtil.print(lvIngredientMatrix);
         //System.out.println(lvIngredientMatrix.length+ " | "+lvIngredientMatrix[0].length);
         user.setEntry(userM);
         ingredient.add(lvIngredientMatrix);
@@ -410,10 +284,6 @@ public class FactorizationUtil {
             FactorMatrix ingredient, //ingredient factor latent
             FactorMatrix recipeIngredientMap, //recipe x ingredients (1/0)
             List<Pair> observable
-//            List<Recipe> listOfRecipe,
-//            HashMap<String, Integer> recipeMap, //recipeMap
-//            HashMap<Integer, String> reverseMap, //user reverse map
-//            TrainMatrix trainM
     ) {
         List<Recipe> listOfRecipe = this.control.getRecipes();
         HashMap<String, Integer> recipeMap = this.control.getRecipeMap();
@@ -423,8 +293,6 @@ public class FactorizationUtil {
         String targetId = reverseMap.get(index);
         double[] res = new double[latentVector.length];
         double[] lambdaTarget = MatrixUtil.scalarMultiplication(LAMBDA, latentVector);
-        //error di pair, perkalian matrik sifatnya AB != BA
-        //double[][] pair = recipeIngredientMap.multiply(ingredient.getEntry());
         double[][] pair = MatrixUtil.multiplyWithTransposing(ingredient.getEntry(), recipeIngredientMap.transpose(), true);
         for (Pair curr: observable) {
             if(curr.getUser().equals(targetId)){
@@ -432,12 +300,33 @@ public class FactorizationUtil {
                 double trainValue = trainM.getEntryByIndex(index, recipeIndex); // nilai training
                 double predicted = prediction[index][recipeIndex];
                 double error = trainValue - (predicted / (TRUNCATION_VAL* listOfRecipe.get(recipeIndex).getIngredientLength())); // nilai error / prediksi
-                //res = MatrixUtil.vectorCalculation(res,pair[recipeIndex],1,false,error);
-//                System.out.println(error);
-                res = MatrixUtil.vectorCalculation(res,MatrixUtil.getColumnVector(pair, recipeIndex),1,false,error);
+                res = MatrixUtil.vectorCalculation(
+                        res,
+                            MatrixUtil.getColumnVector(pair, recipeIndex),
+                        1, //addition
+                        2, //scalar(error) multiplied to right matrices
+                        error   
+                );
+
+                /*
+                    what if: lambda target is added (minus in the formula)
+                    on each times error times pair calculated and then added to 
+                    res (the Sigma cover till these operation)
+                */
+//                res = MatrixUtil.vectorCalculation(
+//                        res,
+//                        MatrixUtil.vectorCalculation(
+//                                MatrixUtil.getColumnVector(pair, recipeIndex),
+//                                lambdaTarget, 
+//                                0, //subtraction
+//                                1, //scalar multiplied to left matrices entry
+//                                error),
+//                        1
+//                );
             }
         }
-        res = MatrixUtil.vectorCalculation(res, lambdaTarget, 0, true, LEARNING_RATE);
+        res = MatrixUtil.vectorCalculation(res, lambdaTarget, 0, 0, LEARNING_RATE);
+        //res = MatrixUtil.scalarMultiplication(LEARNING_RATE, res);
         return res;
     }
     
@@ -447,10 +336,6 @@ public class FactorizationUtil {
             FactorMatrix user, 
             FactorMatrix recipeIngredientMap, //recipe x ingredients (1/0)
             List<Pair> observable
-//            List<Recipe> listOfRecipe,
-//            HashMap<String, Integer> userMap, 
-//            HashMap<String, Integer> recipeMap,
-//            TrainMatrix trainM
     ) {
         List<Recipe> listOfRecipe = this.control.getRecipes();
         HashMap<String, Integer> userMap = this.control.getUserMap();
@@ -466,15 +351,29 @@ public class FactorizationUtil {
             double[] userVector = user.getFactorByIndex(userIndex);
             double[] recipeMask = recipeIngredientMap.getFactorByIndex(recipeIndex);
             double predicted = prediction[userIndex][recipeIndex];
-            //System.out.println(actual+" , "+predicted);
             double error = actual - (predicted / (TRUNCATION_VAL* listOfRecipe.get(recipeIndex).getIngredientLength()));
-            //System.out.println(actual+" , "+(predicted / (TRUNCATION_VAL* listOfRecipe.get(recipeIndex).getIngredientLength())));
             double[][] pair = MatrixUtil.vectorMultiplicationToMatrix(recipeMask, userVector);
             res = MatrixUtil.matrixCalculation(res,pair,1,false,error);
+            
+            /*
+                what if: lambda target is added (minus in the formula)
+                on each times error times pair calculated and then added to 
+                res (the Sigma cover till these operation)
+            */
+//            res = MatrixUtil.matrixCalculation(
+//                    res, 
+//                    MatrixUtil.matrixCalculation(
+//                            pair,
+//                            lambdaValue,
+//                            0,
+//                            true,
+//                            error
+//                    ),
+//                    1 //addition
+//            );
         }
-        //res = MatrixUtil.matrixCalculation(res, lambdaValue, 0, false, LEARNING_RATE);
-            res = MatrixUtil.matrixCalculation(res, lambdaValue, 0);
-            res = MatrixUtil.scalarMultiplication(LEARNING_RATE, res);
+        res = MatrixUtil.matrixCalculation(res, lambdaValue, 0);
+        res = MatrixUtil.scalarMultiplication(LEARNING_RATE, res);
         return res;
     }
 

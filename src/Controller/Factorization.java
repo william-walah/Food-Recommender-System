@@ -9,7 +9,6 @@ import Interface.FactorizationData;
 import Model.Dataset;
 import Model.FactorMatrix;
 import Model.FactorType;
-import Model.Ingredient;
 import Util.FactorizationUtil;
 import Util.MatrixUtil;
 import Model.Recipe;
@@ -20,23 +19,14 @@ import Model.Pair;
 import Model.RecipePredicted;
 import com.opencsv.CSVWriter;
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
 
 /**
  *
@@ -130,19 +120,23 @@ public class Factorization implements Runnable, FactorizationData {
     private boolean readRecipesData() {
         boolean success = false;
         try {
-            //this method only works in java IDE
-            //File file = new File("./data/dataset_recipes_ingredient_list_readable_java.csv");
-            //FileReader fr = new FileReader(fr);
-            //BufferedReader br = new BufferedReader(fr);
-            //to be usable in jar, look below. Thanks: https://stackoverflow.com/questions/20389255/reading-a-resource-file-from-within-jar
-            //InputStream in = getClass().getResourceAsStream("/data/dataset_recipes_ingredient_list_readable_java.csv");
+            /* 
+                this method only works in java IDE
+            
+                File file = new File("./data/dataset_recipes_ingredient_list_readable_java.csv");
+                FileReader fr = new FileReader(fr);
+                BufferedReader br = new BufferedReader(fr);
+            
+                to be usable in jar, look below. Thanks: https://stackoverflow.com/questions/20389255/reading-a-resource-file-from-within-jar
+            */
+            // InputStream in = getClass().getResourceAsStream("/data/dataset_recipes_ingredient_list_readable_java.csv");
             //pengujian
             InputStream in = getClass().getResourceAsStream("/data_pengujian/dataset_recipes_ingredient_list_readable_java.csv");
             BufferedReader br = new BufferedReader(new InputStreamReader(in));
             String line = "";
             String[] tempArr;
             int index = 0;
-            Set<String> ingredientsUniqueId = new HashSet<String>();
+            LinkedHashSet<String> ingredientsUniqueId = new LinkedHashSet<String>();
             while ((line = br.readLine()) != null) {
                 tempArr = line.split("[|]+");
                 Recipe curr = new Recipe(tempArr); 
@@ -172,11 +166,8 @@ public class Factorization implements Runnable, FactorizationData {
     private boolean readUsersData() {
         boolean success = false;
         try {
-            //File file = new File("./data/dataset_userId_list.csv");
-            //FileReader fr = new FileReader(file);
-            //BufferedReader br = new BufferedReader(fr);
-            //InputStream in = getClass().getResourceAsStream("/data/dataset_userId_list.csv");
-            //pengujian
+            // InputStream in = getClass().getResourceAsStream("/data/dataset_userId_list.csv");
+            // pengujian
             InputStream in = getClass().getResourceAsStream("/data_pengujian/dataset_userId_list.csv");
             BufferedReader br = new BufferedReader(new InputStreamReader(in));
             String line = "";
@@ -329,15 +320,6 @@ public class Factorization implements Runnable, FactorizationData {
                 //if(loop%250==0) {
                     System.out.println("loop: "+(MAX_LOOP-loop));
                 //}
-
-//                double objectiveValue = utils.objectiveFunction_m1(
-//                        userFactor,
-//                        recipeFactor,
-//                        this.trainM,
-//                        this.d.getTrainPair(),
-//                        this.userMap,
-//                        this.recipeMap
-//                );
                 double objectiveValue = utils.objectiveFunction_m1(
                         userFactor,
                         recipeFactor,
@@ -360,11 +342,6 @@ public class Factorization implements Runnable, FactorizationData {
                             userFactor,
                             recipeFactor,
                             this.d.getTrainPair()
-                            //this.userMap,
-                            //this.recipeMap,
-                            //this.userMap_r,
-                            //this.recipeMap_r,
-                            //this.trainM
                     );
                 }   
             }
@@ -401,13 +378,6 @@ public class Factorization implements Runnable, FactorizationData {
             int loop = MAX_LOOP;
             while (loop-- > 0) {
                 System.out.println("loop: " + (MAX_LOOP - loop));
-                //AB != BA.... 
-//                double[][] currPrediction = MatrixUtil.multiplyWithTransposing(
-//                        userFactor_2.getEntry(),
-//                        recipeIngredientsMap.multiply(
-//                                ingredientFactor.getEntry()
-//                        ),  
-//                        false);
                 if(this.learningType > 0) this.utils.setLearningRate(1.0/((MAX_LOOP-loop)*1.0)); //iteratively 
                 MatrixUtil.sumAll(userFactor_2.getEntry());
                 MatrixUtil.sumAll(ingredientFactor.getEntry());
@@ -415,17 +385,20 @@ public class Factorization implements Runnable, FactorizationData {
                         MatrixUtil.multiplyWithTransposing(userFactor_2.getEntry(), ingredientFactor.getEntry(), false),
                         recipeIngredientsMap.getEntry(),
                         false); 
+                
+                for (int i = 0; i < currPrediction.length; i++) {
+                    for (int j = 0; j < currPrediction[i].length; j++) {
+                        System.out.print(currPrediction[i][j]+",");
+                    }
+                    System.out.println("");
+                }
+                System.out.println("");
                         
                 double objectiveValue = utils.objectiveFunction_m2(
                         currPrediction,
                         userFactor_2,
                         ingredientFactor,
-                        //recipeIngredientsMap,
-                        //this.trainM,
                         this.d.getTrainPair()
-                        //this.recipes,
-                        //this.userMap,
-                        //this.recipeMap
                 );
                 obj2_list[MAX_LOOP-1-loop] = String.format("%.4f",objectiveValue);
                 System.out.println("Objective Function: "+objectiveValue);
@@ -444,12 +417,6 @@ public class Factorization implements Runnable, FactorizationData {
                             ingredientFactor,
                             recipeIngredientsMap,
                             this.d.getTrainPair()
-                            //this.recipes,
-                            //this.userMap,
-                            //this.recipeMap,
-                            //this.userMap_r,
-                            //this.recipeMap_r,
-                            //this.trainM
                     );
                 }
             }
@@ -487,9 +454,6 @@ public class Factorization implements Runnable, FactorizationData {
         
         double rmse_1_test = utils.rmse(
                 this.d.getTestPair(),
-//                this.recipes,
-//                this.userMap,
-//                this.recipeMap,
                 model1,
                 this.testM.getEntry(),
                 0
@@ -497,9 +461,6 @@ public class Factorization implements Runnable, FactorizationData {
         
         double rmse_1_train = utils.rmse(
                 this.d.getTrainPair(),
-//                this.recipes,
-//                this.userMap,
-//                this.recipeMap,
                 model1,
                 this.trainM.getEntry(),
                 0
@@ -507,9 +468,6 @@ public class Factorization implements Runnable, FactorizationData {
         
         double rmse_1_data = utils.rmse(
                 this.d.getDataPair(),
-//                this.recipes,
-//                this.userMap,
-//                this.recipeMap,
                 model1,
                 this.d.getEntry(),
                 0
@@ -517,9 +475,6 @@ public class Factorization implements Runnable, FactorizationData {
         
         double rmse_2_test = utils.rmse(
                 this.d.getTestPair(),
-//                this.recipes,
-//                this.userMap,
-//                this.recipeMap,
                 model2,
                 this.testM.getEntry(),
                 1
@@ -527,9 +482,6 @@ public class Factorization implements Runnable, FactorizationData {
         
         double rmse_2_train = utils.rmse(
                 this.d.getTrainPair(),
-//                this.recipes,
-//                this.userMap,
-//                this.recipeMap,
                 model2,
                 this.trainM.getEntry(),
                 1
@@ -537,9 +489,6 @@ public class Factorization implements Runnable, FactorizationData {
         
         double rmse_2_data = utils.rmse(
                 this.d.getDataPair(),
-//                this.recipes,
-//                this.userMap,
-//                this.recipeMap,
                 model2,
                 this.d.getEntry(),
                 1

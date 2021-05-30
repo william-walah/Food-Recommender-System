@@ -82,7 +82,7 @@ public class MatrixUtil {
             double[] left,
             double[] right, 
             int type, //0 = -, 1 = +
-            boolean both, //true = scalar multiply after +/- calculation, false = scalar multiply to right vector
+            int scalarSide, // 0 = both (scalar multiply after entry calculated), 1 = left, 2 = right
             double scalar
     ) {
         if(left.length != right.length) throw new RuntimeException("Error mismatch vector length on simple calculation(add/sub)");
@@ -90,14 +90,17 @@ public class MatrixUtil {
         switch(type){
             case 0: //-
                 for (int i = 0; i < res.length; i++) {
-                    if(both) res[i] = scalar * (left[i]- right[i]);
-                    else res[i] = left[i] - (scalar*right[i]);
+                    if(scalarSide == 0) res[i] = scalar * (left[i] - right[i]);
+                    else if(scalarSide == 1) res[i] = (scalar * left[i]) - right[i];
+                    else if(scalarSide == 2) res[i] = left[i] - (scalar*right[i]);
+                    else throw new RuntimeException("Unmatched parameter scalarSide (0-2), given: "+scalarSide);
                 }
                 break;
             default: //+
                 for (int i = 0; i < res.length; i++) {
-                    if(both) res[i] = scalar * (left[i]+ right[i]);
-                    else res[i] = left[i] + (scalar*right[i]);
+                    if(scalarSide == 0) res[i] = scalar * (left[i] + right[i]);
+                    else if(scalarSide == 1) res[i] = (scalar * left[i]) + right[i];
+                    else if(scalarSide == 2) res[i] = left[i] + (scalar*right[i]);
                 }
                 break;
         }
@@ -109,6 +112,15 @@ public class MatrixUtil {
             System.out.printf("%.2f, ",v[i]);
         }
         System.out.println("");
+    }
+    
+    public static void print(double[][] v){
+        for (int i = 0; i < v.length; i++) {
+            for (int j = 0; j < v[i].length; j++) {
+                System.out.printf("%f, ",v[i][j]);
+            }
+            System.out.println("");
+        }
     }
     
     public static double[] vectorMultiplyMatrix(double[] v, double[][] m){
@@ -153,7 +165,7 @@ public class MatrixUtil {
             double[][] left,
             double[][] right, 
             int type, //0 = -, 1 = +
-            boolean scalarOnLeft, //0 = left, 1 = right
+            boolean scalarOnLeft, //true = left, false = right
             double scalar
     ){
         if(left.length != right.length || left[0].length != right[0].length) throw new RuntimeException("Error mismatch matrix dimension");

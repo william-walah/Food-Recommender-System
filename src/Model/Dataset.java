@@ -5,6 +5,7 @@
  */
 package Model;
 
+import Util.MatrixUtil;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -61,7 +62,7 @@ public class Dataset extends Matrix {
         boolean success = false;
         try {
             //InputStream in = getClass().getResourceAsStream("/data/dataset_readable_java.csv");
-            //pengujian
+            // pengujian
             InputStream in = getClass().getResourceAsStream("/data_pengujian/dataset_readable_java.csv");
             BufferedReader br = new BufferedReader(new InputStreamReader(in));
             String line = "";
@@ -83,6 +84,10 @@ public class Dataset extends Matrix {
          } catch(IOException ioe) {
             ioe.printStackTrace();
          } finally {
+            MatrixUtil.print(entry);
+            for(Pair curr: userRecipe_pair){
+                System.out.println(curr.getUser()+","+curr.getRecipe());
+            }
             return success;
         }
     }
@@ -130,7 +135,7 @@ public class Dataset extends Matrix {
 //        return result;
 //    }
     
-    // PENGUJIAN
+    // PENGUJIAN metode 1 & 2
     public List<Object> split(
             HashMap<String, Integer> userMap,
             HashMap<String, Integer> recipeMap

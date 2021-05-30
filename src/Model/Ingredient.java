@@ -18,8 +18,10 @@ public class Ingredient {
     private List<String> ingredients;
     private List<String> ingredientsId;
     private HashMap<String, String> ingredientMap;
+    private int uniqueLength;
 
     public Ingredient(String input, String id) {
+        this.uniqueLength = 0;
         this.ingredients = new ArrayList<String>();
         this.ingredientsId = new ArrayList<String>();
         this.ingredientMap = new HashMap<String, String>();
@@ -28,6 +30,7 @@ public class Ingredient {
         if(ingreList.length != ingreIdList.length) throw new RuntimeException("Error Missmatch ID length and Ingredient Length when parsing data");
         for (int i = 0; i < ingreIdList.length; i++) {
             this.ingredients.add(ingreList[i]);
+            if(!ingredientsId.contains(ingreIdList[i])) this.uniqueLength++;
             this.ingredientsId.add(ingreIdList[i]);
             this.ingredientMap.put(ingreList[i], ingreIdList[i]);
         }
@@ -53,5 +56,5 @@ public class Ingredient {
         return this.ingredientMap;
     }
     
-    public int length(){return this.ingredients.size();}
+    public int length(){return this.uniqueLength;}
 }

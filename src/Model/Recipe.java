@@ -23,6 +23,12 @@ public class Recipe {
     public Recipe(String... data) {
         this.id = data[0];
         this.name = new SimpleStringProperty(data[1]);
+        //WARNING
+        //BECAUSE THE DATASET CONTAINS DUPLICATE INGREDIENTS ID
+        //FOR DIFFERENT INGREDIENTS NAME
+        //GETTING INGREDIENT LENGTH MUST SEARCH FOR NUMBER OF
+        //UNIQUE INGREDIENTS ID, AS THAT LENGTH IS
+        //THE ONE USED IN INGREDIENT X RECIPE MASK MATRIX
         this.ingredient = new Ingredient(data[2],data[3]);
         this.userRating = new SimpleStringProperty("0");
     }
