@@ -29,12 +29,14 @@ public class Dataset extends Matrix {
     private List<Pair> userRecipe_pair; //List of Pair matrix
     private List<Pair> trainPair; //List of Pair for train matrix
     private List<Pair> testPair; //List of Pair for test matrix
+    private List<Pair> customeUserPair; //List of Pair for custome user
     
     public Dataset(int userSize, int recipeSize){
         super(userSize,recipeSize);
         this.userRecipe_pair = new ArrayList<Pair>();
         this.trainPair = new ArrayList<Pair>();
         this.testPair = new ArrayList<Pair>();
+        this.customeUserPair = new ArrayList<Pair>();
     }
     
     //for copy purpose
@@ -43,15 +45,21 @@ public class Dataset extends Matrix {
         this.userRecipe_pair = new ArrayList<Pair>();
         this.trainPair = new ArrayList<Pair>();
         this.testPair = new ArrayList<Pair>();
+        this.customeUserPair = new ArrayList<Pair>();
     }
     
     public Dataset copy(){
         Dataset copy = new Dataset(this.entry);
         List<Pair> dataPair = new ArrayList<Pair>();
+        List<Pair> userPair = new ArrayList<Pair>();
         for(Pair curr: this.userRecipe_pair){
             dataPair.add(new Pair(curr.getUser(),curr.getRecipe()));
         }
+        for(Pair curr: this.customeUserPair){
+            userPair.add(new Pair(curr.getUser(),curr.getRecipe()));
+        }
         copy.setDataPair(dataPair);
+        copy.setCustomeUserPair(userPair);
         return copy;
     }
     
@@ -61,9 +69,9 @@ public class Dataset extends Matrix {
     ){
         boolean success = false;
         try {
-            //InputStream in = getClass().getResourceAsStream("/data/dataset_readable_java.csv");
+            InputStream in = getClass().getResourceAsStream("/data/dataset.csv");
             // pengujian
-            InputStream in = getClass().getResourceAsStream("/data_pengujian/dataset_readable_java.csv");
+            // InputStream in = getClass().getResourceAsStream("/data_pengujian/dataset_readable_java.csv");
             BufferedReader br = new BufferedReader(new InputStreamReader(in));
             String line = "";
             String[] tempArr;
@@ -84,106 +92,101 @@ public class Dataset extends Matrix {
          } catch(IOException ioe) {
             ioe.printStackTrace();
          } finally {
-            MatrixUtil.print(entry);
-            for(Pair curr: userRecipe_pair){
-                System.out.println(curr.getUser()+","+curr.getRecipe());
-            }
             return success;
         }
     }
     
-//    public List<Object> split(
-//            HashMap<String, Integer> userMap,
-//            HashMap<String, Integer> recipeMap
-//    ){
-//        // thanks: https://stackoverflow.com/questions/5617016/how-do-i-copy-a-2-dimensional-array-in-java
-//        double[][] trainMatrix = Arrays.stream(this.entry).map(double[]::clone).toArray(double[][]::new);
-//        
-//        TrainMatrix tm = new TrainMatrix(trainMatrix);
-//        TestMatrix _tm = new TestMatrix(this.entry.length, this.entry[0].length);
-//        
-//        //Splitting the list using 8:2 ratio for train:test
-//        int sizeMask =  20*this.userRecipe_pair.size()/100;
-//        Random r = new Random();
-//        
-//        //reset attribute
-//        this.trainPair.clear();
-//        this.testPair.clear();
-//        
-//        // deep copy the dataset pair to train pair
-//        for(Pair curr: this.userRecipe_pair){
-//            this.trainPair.add(new Pair(curr.getUser(),curr.getRecipe()));
-//        }
-//        for (int i = 0; i < sizeMask; i++) {
-//            int rIndex = r.nextInt(this.trainPair.size());
-//            Pair p = this.trainPair.remove(rIndex);
-//            int row_idx = userMap.get(p.getUser());
-//            int col_idx = recipeMap.get(p.getRecipe());
-//            
-//            this.testPair.add(p);
-//            
-//            //apply masking, for faster coding
-//            //set train matrix to 0
-//            tm.changeEntry(row_idx,col_idx, 0);
-//            //set test matrix entry to value
-//            _tm.changeEntry(row_idx,col_idx, this.entry[row_idx][col_idx]);
-//        }
-//        System.out.println(userRecipe_pair.size());
-//        System.out.println(trainPair.size());
-//        System.out.println(testPair.size());
-//        List<Object> result = new LinkedList<Object>(Arrays.asList(tm,_tm));
-//        return result;
-//    }
-    
-    // PENGUJIAN metode 1 & 2
     public List<Object> split(
             HashMap<String, Integer> userMap,
             HashMap<String, Integer> recipeMap
     ){
-        double[][] trainMatrix = new double[][]{
-            {5,0,4,1},
-            {0,0,2,0},
-            {4,0,0,3},
-            {1,0,2,1}
-        };
-        
-        double[][] testMatrix = new double[][]{
-            {0,0,0,0},
-            {3,0,0,5},
-            {0,0,0,0},
-            {0,4,0,0}
-        };
+        // thanks: https://stackoverflow.com/questions/5617016/how-do-i-copy-a-2-dimensional-array-in-java
+        System.out.println(this.entry.length+"x"+this.entry[0].length);
+        double[][] trainMatrix = Arrays.stream(this.entry).map(double[]::clone).toArray(double[][]::new);
         
         TrainMatrix tm = new TrainMatrix(trainMatrix);
         TestMatrix _tm = new TestMatrix(this.entry.length, this.entry[0].length);
-        _tm.setEntry(testMatrix);
+        
+        List<Pair> dataset = new ArrayList<Pair>();
+        dataset.addAll(this.userRecipe_pair);
+        dataset.addAll(this.customeUserPair);
+        
+        //Splitting the list using 8:2 ratio for train:test
+        int sizeMask =  20*dataset.size()/100;
+        Random r = new Random();
         
         //reset attribute
         this.trainPair.clear();
         this.testPair.clear();
         
-        for (int i = 0; i < trainMatrix.length; i++) {
-            for (int j = 0; j < trainMatrix[i].length; j++) {
-                if(trainMatrix[i][j] != 0.0){
-                    this.trainPair.add(new Pair((i+1)+"",(j+1)+""));
-                }
-            }
+        // deep copy the dataset pair to train pair
+        for(Pair curr: dataset){
+            this.trainPair.add(new Pair(curr.getUser(),curr.getRecipe()));
         }
-        
-        for (int i = 0; i < testMatrix.length; i++) {
-            for (int j = 0; j < testMatrix[i].length; j++) {
-                if(testMatrix[i][j] != 0.0){
-                    this.testPair.add(new Pair((i+1)+"",(j+1)+""));
-                }
-            }
+        for (int i = 0; i < sizeMask; i++) {
+            int rIndex = r.nextInt(this.trainPair.size());
+            Pair p = this.trainPair.remove(rIndex);
+            int row_idx = userMap.get(p.getUser());
+            int col_idx = recipeMap.get(p.getRecipe());
+            
+            this.testPair.add(p);
+            
+            //apply masking, for faster coding
+            //set train matrix to 0
+            tm.changeEntry(row_idx,col_idx, 0);
+            //set test matrix entry to value
+            _tm.changeEntry(row_idx,col_idx, this.entry[row_idx][col_idx]);
         }
-        
-        System.out.println(userRecipe_pair.size());
-        System.out.println(trainPair.size());
-        System.out.println(testPair.size());
         List<Object> result = new LinkedList<Object>(Arrays.asList(tm,_tm));
         return result;
     }
+    
+    // PENGUJIAN metode 1 & 2
+//    public List<Object> split(
+//            HashMap<String, Integer> userMap,
+//            HashMap<String, Integer> recipeMap
+//    ){
+//        double[][] trainMatrix = new double[][]{
+//            {5,0,4,1},
+//            {0,0,2,0},
+//            {4,0,0,3},
+//            {1,0,2,1}
+//        };
+//        
+//        double[][] testMatrix = new double[][]{
+//            {0,0,0,0},
+//            {3,0,0,5},
+//            {0,0,0,0},
+//            {0,4,0,0}
+//        };
+//        
+//        TrainMatrix tm = new TrainMatrix(trainMatrix);
+//        TestMatrix _tm = new TestMatrix(this.entry.length, this.entry[0].length);
+//        _tm.setEntry(testMatrix);
+//        
+//        //reset attribute
+//        this.trainPair.clear();
+//        this.testPair.clear();
+//        
+//        for (int i = 0; i < trainMatrix.length; i++) {
+//            for (int j = 0; j < trainMatrix[i].length; j++) {
+//                if(trainMatrix[i][j] != 0.0){
+//                    this.trainPair.add(new Pair((i+1)+"",(j+1)+""));
+//                }
+//            }
+//        }
+//        
+//        for (int i = 0; i < testMatrix.length; i++) {
+//            for (int j = 0; j < testMatrix[i].length; j++) {
+//                if(testMatrix[i][j] != 0.0){
+//                    this.testPair.add(new Pair((i+1)+"",(j+1)+""));
+//                }
+//            }
+//        }
+//        
+//        List<Object> result = new LinkedList<Object>(Arrays.asList(tm,_tm));
+//        return result;
+//    }
     
     public void addNewVector(double[] v, List<Pair> customPair){
         double[][] newEntry = new double[this.entry.length+1][this.entry[0].length];
@@ -192,13 +195,25 @@ public class Dataset extends Matrix {
         }
         newEntry[newEntry.length-1] = v;
         this.entry = newEntry;
-        this.userRecipe_pair.addAll(customPair);
+        this.customeUserPair.addAll(customPair);
     }
     
-    public List<Pair> getDataPair(){return this.userRecipe_pair;}
+    public void replaceCustomeUser(double[] v, List<Pair> customPair, int index){
+        this.customeUserPair.clear();
+        this.customeUserPair.addAll(customPair);
+        this.entry[index] = v;
+    }
+    
+    public List<Pair> getDataPair(){
+        List<Pair> res = new ArrayList<>();
+        res.addAll(this.userRecipe_pair);
+        res.addAll(this.customeUserPair);
+        return res;
+    }
     public List<Pair> getTrainPair(){return this.trainPair;}
     public List<Pair> getTestPair(){return this.testPair;}
     public void setDataPair(List<Pair> o){this.userRecipe_pair = o;};
     public void setTrainPair(List<Pair> o){this.trainPair = o;};
     public void setTestPair(List<Pair> o){this.testPair = o;};
+    public void setCustomeUserPair(List<Pair> o){this.customeUserPair = o;};
 }

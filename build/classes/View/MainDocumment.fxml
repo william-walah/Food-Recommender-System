@@ -22,7 +22,7 @@
    <children>
       <TabPane fx:id="mainTable" prefHeight="675.0" prefWidth="1280.0" styleClass="tab" stylesheets="@../Style/style.css" tabClosingPolicy="UNAVAILABLE">
         <tabs>
-            <Tab text="Factorization Process">
+            <Tab text="Konfigurasi Faktorisasi">
               <content>
                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                      <children>
@@ -39,7 +39,7 @@
                                  </font>
                               </Label>
                               <TextField fx:id="latent_size" layoutX="280.0" layoutY="-1.0" prefHeight="31.0" prefWidth="221.0" stylesheets="@../Style/style.css" />
-                              <Label layoutX="280.0" layoutY="29.0" text="*1 s.d. 1000000" textFill="#f80000">
+                              <Label layoutX="280.0" layoutY="29.0" text="*2 s.d. 1000000" textFill="#f80000">
                                  <font>
                                     <Font name="System Italic" size="11.0" />
                                  </font>
@@ -118,15 +118,16 @@
                               <Font name="Arial Bold" size="18.0" />
                            </font>
                         </Button>
+                        <Button layoutX="34.0" layoutY="575.0" mnemonicParsing="false" onAction="#automaticTesting" text="Automatic Testing" />
                      </children>
                   </AnchorPane>
               </content>
             </Tab>
-          <Tab fx:id="recom_tab" text="View Recommendation">
+          <Tab fx:id="recom_tab" text="Rekomendasi Dataset">
             <content>
               <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                      <children>
-                        <Label layoutX="39.0" layoutY="22.0" prefHeight="27.0" prefWidth="165.0" text="Daftar User ID">
+                        <Label layoutX="39.0" layoutY="22.0" prefHeight="27.0" prefWidth="228.0" text="Daftar ID Pengguna">
                            <font>
                               <Font name="Arial Bold" size="24.0" />
                            </font></Label>
@@ -134,8 +135,8 @@
                            <children>
                               <TableView fx:id="user_table" prefHeight="467.0" prefWidth="617.0">
                                 <columns>
-                                  <TableColumn fx:id="userId_col" prefWidth="217.0" resizable="false" text="User ID" />
-                                  <TableColumn fx:id="action_col" prefWidth="232.0" resizable="false" text="Action" />
+                                  <TableColumn fx:id="userId_col" prefWidth="217.0" resizable="false" text="ID Pengguna" />
+                                  <TableColumn fx:id="action_col" prefWidth="232.0" resizable="false" text="Aksi" />
                                 </columns>
                               </TableView>
                            </children>
@@ -152,7 +153,7 @@
                               </TableView>
                            </children>
                         </StackPane>
-                        <Label layoutX="559.0" layoutY="57.0" text="Sedang Menampilkan Rekomendasi User:" textFill="#142179">
+                        <Label fx:id="user_recom_info" layoutX="559.0" layoutY="57.0" text="Sedang Menampilkan Rekomendasi Pengguna:" textFill="#142179">
                            <font>
                               <Font name="Arial Bold" size="18.0" />
                            </font>
@@ -161,47 +162,48 @@
                   </AnchorPane>
             </content>
           </Tab>
-          <Tab fx:id="custom_recom_tab" text="View Your Recommendation">
+          <Tab fx:id="custom_recom_tab" text="Rekomendasi Pengguna">
             <content>
               <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                      <children>
                         <StackPane layoutX="37.0" layoutY="45.0" prefHeight="362.0" prefWidth="603.0">
                            <children>
-                              <TableView fx:id="custom_user_table" editable="true" prefHeight="444.0" prefWidth="606.0">
+                              <TableView fx:id="custom_user_table" editable="true" prefHeight="444.0" prefWidth="606.0" stylesheets="@../Style/style.css">
                                 <columns>
-                                  <TableColumn fx:id="cu_recipesCol" prefWidth="139.0" text="Recipes" />
-                                  <TableColumn fx:id="cu_ingredientsCol" prefWidth="377.0" text="Ingredients" />
-                                    <TableColumn fx:id="cu_ratingCol" prefWidth="87.0" resizable="false" text="Your Rate" />
+                                  <TableColumn fx:id="cu_recipesCol" prefWidth="139.0" text="Resep" />
+                                  <TableColumn fx:id="cu_ingredientsCol" prefWidth="377.0" text="Bahan Makanan" />
+                                    <TableColumn fx:id="cu_ratingCol" prefWidth="87.0" resizable="false" text="Rating" />
                                 </columns>
                               </TableView>
                            </children>
                         </StackPane>
-                        <Button fx:id="custom_recom" layoutX="470.0" layoutY="439.0" mnemonicParsing="false" onAction="#doCustomeRecommendation" prefHeight="31.0" prefWidth="170.0" text="Recommend Me!" textFill="#0e540a">
+                        <Button fx:id="custom_recom" layoutX="435.0" layoutY="439.0" mnemonicParsing="false" onAction="#doCustomeRecommendation" prefHeight="31.0" prefWidth="205.0" text="Rekomendasikan Saya" textFill="#0e540a">
                            <font>
                               <Font name="Arial Bold" size="15.0" />
                            </font></Button>
-                        <Button layoutX="37.0" layoutY="439.0" mnemonicParsing="false" onAction="#saveCustomRating" prefHeight="31.0" prefWidth="170.0" text="Save to CSV" textFill="#080d5b">
+                        <Button layoutX="37.0" layoutY="439.0" mnemonicParsing="false" onAction="#saveCustomRating" prefHeight="31.0" prefWidth="124.0" text="Simpan CSV" textFill="#080d5b">
                            <font>
                               <Font name="Arial Bold" size="15.0" />
                            </font>
                         </Button>
-                        <Button layoutX="254.0" layoutY="439.0" mnemonicParsing="false" onAction="#loadCustomRating" prefHeight="31.0" prefWidth="170.0" text="Load Rating Data" textFill="#5b0909">
+                        <Button layoutX="232.0" layoutY="439.0" mnemonicParsing="false" onAction="#loadCustomRating" prefHeight="31.0" prefWidth="118.0" text="Baca CSV" textFill="#5b0909">
                            <font>
                               <Font name="Arial Bold" size="15.0" />
                            </font>
                         </Button>
-                        <Label layoutX="710.0" layoutY="45.0" text="Rekomendasi Anda:" textFill="#1e0c51">
+                        <Label layoutX="716.0" layoutY="14.0" text="Rekomendasi Anda:" textFill="#1e0c51">
                            <font>
                               <Font name="Arial Bold" size="18.0" />
                            </font>
                         </Label>
-                        <StackPane layoutX="710.0" layoutY="80.0" prefHeight="391.0" prefWidth="535.0">
+                        <StackPane layoutX="716.0" layoutY="45.0" prefHeight="427.0" prefWidth="535.0">
                            <children>
-                              <TableView fx:id="customize_result" prefHeight="200.0" prefWidth="200.0">
+                              <TableView fx:id="customize_result" prefHeight="432.0" prefWidth="535.0" stylesheets="@../Style/style.css">
                                 <columns>
-                                  <TableColumn fx:id="cust_recipeName" prefWidth="237.0" text="Recipes" />
-                                  <TableColumn fx:id="cust_predicted1" prefWidth="154.0" text="Rating (P1)" />
-                                    <TableColumn fx:id="cust_predicted2" prefWidth="143.0" text="Rating (P2)" />
+                                  <TableColumn fx:id="cust_recipeName" prefWidth="181.0" text="Resep" />
+                                    <TableColumn fx:id="cust_actual" editable="false" maxWidth="122.0" prefWidth="116.0" resizable="false" text="Rating Anda" />
+                                  <TableColumn fx:id="cust_predicted1" editable="false" maxWidth="155.0" prefWidth="118.0" resizable="false" text="Rating (P1)" />
+                                    <TableColumn fx:id="cust_predicted2" maxWidth="147.0" prefWidth="119.0" resizable="false" text="Rating (P2)" />
                                 </columns>
                               </TableView>
                            </children>
@@ -239,6 +241,11 @@
                               <TextArea fx:id="top_n_ta" layoutX="678.0" layoutY="15.0" prefHeight="116.0" prefWidth="522.0" />
                            </children>
                         </Pane>
+                        <Label layoutX="37.0" layoutY="14.0" text="Daftar Resep" textFill="#1e0c51">
+                           <font>
+                              <Font name="Arial Bold" size="18.0" />
+                           </font>
+                        </Label>
                      </children></AnchorPane>
             </content>
           </Tab>

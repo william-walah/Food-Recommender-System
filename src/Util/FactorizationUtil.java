@@ -59,7 +59,7 @@ public class FactorizationUtil {
             //System.out.println(String.format("%.3f_p %.3f_a",predicted,trainM.getEntryByIndex(userIndex, recipeIndex)));
             sumOfErrorSquared += Math.pow((trainM.getEntryByIndex(userIndex, recipeIndex) - predicted), 2);
         }
-        System.out.println("Error without penalty: "+sumOfErrorSquared);
+        //System.out.println("Error without penalty: "+sumOfErrorSquared);
         double penalty = LAMBDA * (user.calculateVectorLength() + recipe.calculateVectorLength());
         return sumOfErrorSquared + penalty;
     }
@@ -227,7 +227,7 @@ public class FactorizationUtil {
             sumOfErrorSquared += Math.pow((actual - predicted), 2);
         }
         double penalty = LAMBDA * (user.calculateVectorLength() + ingredient.frobeniusNorm());
-        System.out.println("Error without penalty: "+sumOfErrorSquared);
+        //System.out.println("Error without penalty: "+sumOfErrorSquared);
         return sumOfErrorSquared + penalty;
     }
 
@@ -302,7 +302,7 @@ public class FactorizationUtil {
                 double error = trainValue - (predicted / (TRUNCATION_VAL* listOfRecipe.get(recipeIndex).getIngredientLength())); // nilai error / prediksi
                 res = MatrixUtil.vectorCalculation(
                         res,
-                            MatrixUtil.getColumnVector(pair, recipeIndex),
+                        MatrixUtil.getColumnVector(pair, recipeIndex),
                         1, //addition
                         2, //scalar(error) multiplied to right matrices
                         error   
@@ -379,9 +379,6 @@ public class FactorizationUtil {
 
     public double rmse(
             List<Pair> testPair,
-//            List<Recipe> listOfRecipe,
-//            HashMap<String, Integer> userMap,
-//            HashMap<String, Integer> recipeMap,
             double[][] modelRes,
             double[][] matrixData,
             int method
@@ -389,7 +386,7 @@ public class FactorizationUtil {
         List<Recipe> listOfRecipe = this.control.getRecipes();
         HashMap<String, Integer> userMap = this.control.getUserMap();
         HashMap<String, Integer> recipeMap = this.control.getRecipeMap();
-
+        
         double squaredError = 0.0;
         for (int i = 0; i < testPair.size(); i++) {
             Pair curr = testPair.get(i);

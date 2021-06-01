@@ -78,6 +78,10 @@ abstract class Matrix {
         return result;
     }
     
+    //  this frobenius norm is modified, at the end should return
+    // square root of sumSq. But because the algorithm is using
+    // the quadratic value of this norm, so the var. sumSq 
+    // is not square rooted
     public double frobeniusNorm(){
         double sumSq = 0.0;
         for (int i = 0; i < entry.length; i++) {
@@ -85,7 +89,7 @@ abstract class Matrix {
                 sumSq += Math.pow(entry[i][j],2);
             }
         }
-        return Math.sqrt(sumSq);
+        return sumSq;
     }
     
     // time-consuming process (500*500 = 250000 entry)

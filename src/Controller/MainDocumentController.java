@@ -13,9 +13,8 @@ import com.opencsv.CSVWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.Reader;
+import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -25,7 +24,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ResourceBundle;
-import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
@@ -39,10 +37,10 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TabPane;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.RadioButton;
+import javafx.scene.control.ScrollBar;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
@@ -107,6 +105,9 @@ public class MainDocumentController implements Initializable {
 
     @FXML
     private TableColumn<RecipePredicted, String> cust_recipeName;
+    
+    @FXML
+    private TableColumn<RecipePredicted, String> cust_actual;
 
     @FXML
     private TableColumn<RecipePredicted, String> cust_predicted1;
@@ -162,6 +163,9 @@ public class MainDocumentController implements Initializable {
     @FXML
     private TextArea top_n_ta;
     
+    @FXML
+    private Label user_recom_info;
+    
     private ObservableList<Recipe> data_recipe;
     private ObservableList<User> data_user;
 
@@ -182,17 +186,17 @@ public class MainDocumentController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         this.mainTable.setDisable(true);
-        this.programStatus.setText("reading data...");
+        this.programStatus.setText("Membac dataset...");
         boolean isPreprocessed = firstProcess.isPreprocessed();
         this.RECIPE_SIZE = firstProcess.getRecipeSize();
         this.max_recipe.setText("Max. "+RECIPE_SIZE);
         this.top_n_container.setDisable(true);
         if (isPreprocessed) {
-            this.programStatus.setText("success reading view data & initializing dataset");
+            this.programStatus.setText("Berhasil membaca & menginisialisasi dataset");
             secondProcess = firstProcess.copy();
             this.initializeTable();
         } else {
-            this.programStatus.setText("something went wrong with reading view data or initializing dataset. See program log.");
+            this.programStatus.setText("Terjadi kesalahan dalam proses membaca atau inisialisasi dataset. Lihat riwayat aktivitas program untuk lebih detail.");
         }
         this.mainTable.setDisable(!(isPreprocessed));
         
@@ -225,7 +229,7 @@ public class MainDocumentController implements Initializable {
                     String newValue = latent_size.getText().replaceFirst("^0+(?!$)", "");
                     if(newValue.length() > 7) newValue = MAX_INT+"";
                     else if(newValue.length() == 7 && Integer.parseInt(newValue) > MAX_INT) newValue = MAX_INT+"";
-                    else newValue = newValue.equals("") || newValue.equals("0") ? "1" : Integer.parseInt(newValue)+"";
+                    else newValue = newValue.equals("") || Integer.parseInt(newValue) < 2 ? "2" : Integer.parseInt(newValue)+"";
                     latent_size.setText(newValue);
                 }
             }
@@ -257,19 +261,7 @@ public class MainDocumentController implements Initializable {
                 return change;
             }
             return null;
-        }));
-        top_n_input.focusedProperty().addListener(new ChangeListener<Boolean>() {
-            @Override
-            public void changed(ObservableValue<? extends Boolean> arg0, Boolean oldPropertyValue, Boolean newPropertyValue)
-            {
-                if (!newPropertyValue)
-                {
-                    String newValue = top_n_input.getText().replaceFirst("^0+(?!$)", "");
-                    if(newValue.length() > (RECIPE_SIZE+"").length()) newValue = RECIPE_SIZE+"";
-                    top_n_input.setText(newValue);
-                }
-            }
-        });
+        }));    
 
         lambda_value.textProperty().addListener(new ChangeListener<String>() {
             @Override
@@ -352,7 +344,6 @@ public class MainDocumentController implements Initializable {
                 }
             }
         });
-
     }
 
     @FXML
@@ -384,15 +375,15 @@ public class MainDocumentController implements Initializable {
             if(!check[1]) max_iteration.getStyleClass().add("error_input");
             if(!check[2]) lambda_value.getStyleClass().add("error_input");
             if(!check[3]) LR_Value.getStyleClass().add("error_input");
-            this.programStatus.setText("WARNING: can't save parameter value, Some parameter field is empty.");
+            this.programStatus.setText("PERHATIAN!! Beberapa input parameter masih kosong atau tidak sesuai kriteria.");
         } else {
             latent_size.getStyleClass().remove("error_input");
             max_iteration.getStyleClass().remove("error_input");
             lambda_value.getStyleClass().remove("error_input");
             LR_Value.getStyleClass().remove("error_input");
             
-            this.programStatus.setText("Success in setting parameter.");
-            insertLog("# Success in setting the parameter: \n"
+            this.programStatus.setText("Parameter berhasil disimpan.");
+            insertLog("# Berhasil menyimpan nilai parameter: \n"
                     + "#   - Latent Size        : "+latent_size.getText()+"\n"
                     + "#   - Max Iteration      : "+max_iteration.getText()+"\n"
                     + "#   - Lambda Value       : "+lambda_value.getText()+"\n"
@@ -422,7 +413,7 @@ public class MainDocumentController implements Initializable {
     @FXML
     private void startFactorization(ActionEvent event) {
         if(isParameterSet && !isInProcess) {
-            programStatus.setText("In-process of factorization");
+            programStatus.setText("Proses faktorisasi untuk dataset sedang berjalan...");
             isInProcess = true;
             startBtn.setDisable(true);
             custom_recom.setDisable(true);
@@ -436,13 +427,14 @@ public class MainDocumentController implements Initializable {
                 public void run(){
                     try{
                         while(mainThread.getState() != Thread.State.TERMINATED){
-                            Thread.sleep(10000);
+                            Thread.sleep(1000);
                         }
                         startBtn.setDisable(false);
                         custom_recom.setDisable(false);
                         param_save.setDisable(false);
                         isFirstProcessFactorized = true;
                         isInProcess = false;
+                        updateProgramStatus("Proses faktorsiasi untuk dataset selesai.");
                     } catch (InterruptedException ie) {
                         ie.printStackTrace();
                     }
@@ -450,15 +442,15 @@ public class MainDocumentController implements Initializable {
             };
             afterFactorizationThread.start();
         } else{
-            if(isInProcess) this.programStatus.setText("WARNING: another factorization is in process.");
-            else this.programStatus.setText("WARNING: parameter is not set yet.");
+            if(isInProcess) this.programStatus.setText("PERHATIAN!! Proses faktorisasi lain sedang berjalan.");
+            else this.programStatus.setText("PERHATIAN!! Parameter proses faktorisasi belum tersimpan.");
         }
     }
 
     @FXML
     private void doCustomeRecommendation(ActionEvent event) {
         if(isParameterSet && !isInProcess) {
-            programStatus.setText("In-process of customize factorization");
+            programStatus.setText("Proses faktorisasi khusus pengguna sedang berjalan...");
             custom_recom.setDisable(true);
             startBtn.setDisable(true);
             param_save.setDisable(true);
@@ -508,16 +500,17 @@ public class MainDocumentController implements Initializable {
                 startBtn.setDisable(false);
                 param_save.setDisable(false);
                 custom_user_table.setDisable(false);
-                this.programStatus.setText("WARNING: please gives rating at least 5 rating.");
+                this.programStatus.setText("PERHATIAN!! Tolong masukkan setidaknya 5 buah rating. (Tercatat: "+customRating.size()+")");
             }
         } else{
-            if(isInProcess) this.programStatus.setText("WARNING: another factorization is in process.");
-            else this.programStatus.setText("WARNING: parameter is not set yet.");
+            if(isInProcess) this.programStatus.setText("PERHATIAN!! Proses faktorisasi lain sedang berjalan.");
+            else this.programStatus.setText("PERHATIAN!! Parameter proses faktorisasi belum tersimpan.");
         }
     }
     
     @FXML
     private void loadCustomRating(ActionEvent event) {
+        programStatus.setText("Membaca data rating khusus pengguna");
         FileChooser fileChooser = new FileChooser();
 
         //Set extension filter for text files
@@ -534,6 +527,7 @@ public class MainDocumentController implements Initializable {
             Thread t = new Thread(){
                 @Override
                 public void run(){
+                    boolean success = false;
                     try{
                         Thread.sleep(3000);
                         CSVReader csvReader = new CSVReader(new FileReader(file));
@@ -550,11 +544,14 @@ public class MainDocumentController implements Initializable {
                                 curr.setUserRating(data.get(id));
                             };
                         }
+                        success = true;
                     } catch(Exception e){
                         e.printStackTrace();
                     } finally{
                         custom_user_table.refresh();
                         custom_user_table.setDisable(!custom_user_table.isDisable());
+                        if(success) updateProgramStatus("Berhasil membaca data rating pengguna");
+                        else updateProgramStatus("Gagal dalam proses membaca rating data pengguna. Lihat riwayat aktivitas program untuk lebih detail.");
                     }
                 }
             };
@@ -564,6 +561,7 @@ public class MainDocumentController implements Initializable {
 
     @FXML
     private void saveCustomRating(ActionEvent event) {
+        programStatus.setText("Menyimpan data rating khusus pengguna.");
         FileChooser fileChooser = new FileChooser();
 
         //Set extension filter for text files
@@ -577,6 +575,7 @@ public class MainDocumentController implements Initializable {
 
         if (file != null) {
             //do file save process
+            boolean success = false;
             ObservableList<Recipe> customeRating = this.custom_user_table.getItems();
             List<String[]> dataCsv = new ArrayList<String[]>();
             for(Recipe curr: customeRating){
@@ -591,12 +590,16 @@ public class MainDocumentController implements Initializable {
                     writer.writeNext(s);
                 }
                 writer.close();
+                success = true;
             } catch(Exception e) {
                 e.printStackTrace();
+            } finally {
+                if(success) programStatus.setText("Berhasil menyimpan data rating. Silahkan lihat area log untuk alamat penyimpanan.");
+                else programStatus.setText("Gagal dalam proses menyimpan data rating. Lihat riwayat aktivitas program untuk lebih detail.");
             }
-            System.out.println("save success at: "+file.getAbsolutePath());
+            insertLog("Tersimpan pada: "+file.getAbsolutePath());
         } else {
-            //do nothing
+            programStatus.setText("Gagal dalam proses menyimpan data rating. Lihat riwayat aktivitas program untuk lebih detail.");
         }
     }
      
@@ -605,7 +608,10 @@ public class MainDocumentController implements Initializable {
         int input = Integer.parseInt(top_n_input.getText());
         if(input > secondProcess.getRecipeSize()){
             this.programStatus.setText("Jumlah rekomendasi yang di inginkan melebihi banyak resep. Berikan input yang sesuai.");
-        } else {
+        }  else if(input < 1){
+            this.programStatus.setText("Jumlah rekomendasi yang di inginkan adalah 0. Berikan input setidaknya 1.");
+        }
+        else {
             this.programStatus.setText("");
             String str = "Top-"+top_n_input.getText()+" rekomendasi anda:\n";
             // copy instance
@@ -657,8 +663,86 @@ public class MainDocumentController implements Initializable {
         }
     }
     
+    @FXML
+    private void automaticTesting(ActionEvent event){
+        String[] vectorLength = new String[] {"2","3","4","5","6","7","8","9","10"};
+        String[] maxIteration = new String[] {"100","500","1000"};
+        String[] lambdaValue = new String[] {"0.5","1","2","3"};
+        String[] lrValue = new String[] {"0.1","0.01","0.001","0.0001","0.00001"};
+//        String[] vectorLength = new String[] {"2","3"};
+//        String[] maxIteration = new String[] {"10"};
+//        String[] lambdaValue = new String[] {"0.5","1"};
+//        String[] lrValue = new String[] {"0.1","0.01"};
+        String lrType = "Fixed";
+        Thread automaticTest = new Thread(){
+            @Override
+            public void run(){
+                startBtn.setDisable(true);
+                custom_recom.setDisable(true);
+                try{
+                    for(String vector: vectorLength){
+                        for(String iterate: maxIteration){
+                            for(String lambda: lambdaValue){
+                                for(String lr: lrValue){
+                                    firstProcess.setParameter(vector,iterate,lambda,lr,lrType);
+                                    System.out.printf("Mulai proses untuk parameter: [%s, %s, %s, %s]\n",vector,iterate,lambda,lr);
+                                    insertLog(String.format("Mulai proses untuk parameter: [%s, %s, %s, %s]\n",vector,iterate,lambda,lr));
+                                    Thread mainThread = new Thread(firstProcess);
+                                    mainThread.start();
+                                    while(mainThread.getState() != Thread.State.TERMINATED){
+                                        Thread.sleep(1000);
+                                    }
+                                    try{
+                                        double[] rmse1 = firstProcess.getFirstRMSE();
+                                        double[] rmse2 = firstProcess.getSecondRMSE();
+                                        long elapsedTime_1 = firstProcess.getTime(1);
+                                        long elapsedTime_2 = firstProcess.getTime(2);
+                                        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd-MM_HH_mm");  
+                                        LocalDateTime now = LocalDateTime.now();  
+                                        String time = (dtf.format(now));
+                                        File myObj = new File("C:\\Users\\asus\\Desktop\\Result\\"+"result "+time+".txt");
+                                        myObj.createNewFile();
+                                        FileWriter writer = new FileWriter(myObj);
+                                        String s = String.format("Hasil dengan parameter [%s, %s, %s, %s]:\n",vector,iterate,lambda,lr)
+                                            + "############################\n"+ "############################\n"
+                                            + String.format("# RMSE (Test  Set) = %.3f\n",rmse1[0])
+                                            + String.format("# RMSE (Train Set) = %.3f\n",rmse1[1])
+                                            + String.format("# RMSE (Data  Set) = %.3f\n",rmse1[2])
+                                            + String.format("# Waktu Berjalan: %.3fs\n", elapsedTime_1/1000F)
+                                            + "############################\n"
+                                            + "\n"
+                                            + "############################\n"
+                                            + "# SECOND OPTIMIZATION METHOD\n"
+                                            + String.format("# RMSE (Test  Set) = %.5f\n",rmse2[0])
+                                            + String.format("# RMSE (Train Set) = %.5f\n",rmse2[1])
+                                            + String.format("# RMSE (Data  Set) = %.5f\n",rmse2[2])
+                                            + String.format("# Waktu Berjalan: %.3fs\n", elapsedTime_2/1000F)
+                                            + "############################\n";
+                                        writer.write(s);
+                                        writer.close();
+                                    } catch(IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                    System.out.printf("proses selesai untuk parameter: [%s, %s, %s, %s]\n",vector,iterate,lambda,lr);
+                                    insertLog(String.format("proses selesai untuk parameter: [%s, %s, %s, %s]\n",vector,iterate,lambda,lr));
+                                }
+                            }
+                        }
+                    }
+                } catch (InterruptedException ie) {
+                    ie.printStackTrace();
+                }
+                startBtn.setDisable(false);
+                custom_recom.setDisable(false);
+            }
+        };
+        automaticTest.start();
+    }
+    
     private void initializeTable() {
-        // custom user rating recipe table
+        /*
+            custom user rating recipe table
+        */
         this.data_recipe = FXCollections.observableList(firstProcess.getRecipes());
         this.cu_recipesCol.setCellValueFactory(
                 new PropertyValueFactory<Recipe, String>("name"));
@@ -673,7 +757,9 @@ public class MainDocumentController implements Initializable {
         this.custom_user_table.setItems(this.data_recipe);
 
         
-        // user id table data
+        /*
+            dataset user id list table
+        */
         this.data_user = FXCollections.observableList(firstProcess.getUsers());
         this.userId_col.setCellValueFactory(
                 new PropertyValueFactory<User, Integer>("id"));
@@ -701,6 +787,7 @@ public class MainDocumentController implements Initializable {
                                     User u = getTableView().getItems().get(getIndex());
                                     userIdChoice = u.getId();
                                     updateRecommendationTable();
+                                    user_recom_info.setText("Sedang Menampilkan Rekomendasi User: "+u.getId());
                                 } else {
                                     programStatus.setText("Model is not factorized yet for the first time. Can't give recommendation.");
                                 }
@@ -732,13 +819,14 @@ public class MainDocumentController implements Initializable {
         });
     }
     
-    private void disableField(TextField t, boolean isDisable){
-        t.setDisable(isDisable);
+    public void updateProgramStatus(String s){
+        Platform.runLater(()-> {
+            this.programStatus.setText(s);
+        });
     }
     
-    public void firstProcessDone(){
-        startBtn.setDisable(false);
-        isFirstProcessFactorized = true;
+    private void disableField(TextField t, boolean isDisable){
+        t.setDisable(isDisable);
     }
     
     public void updateRecommendationTable(){
@@ -772,6 +860,9 @@ public class MainDocumentController implements Initializable {
         this.cust_recipeName.setCellValueFactory(
                 new PropertyValueFactory<RecipePredicted, String>("recipeName"));
 
+        this.cust_actual.setCellValueFactory(
+                new PropertyValueFactory<RecipePredicted, String>("actualRating"));
+        
         this.cust_predicted1.setCellValueFactory(
                 new PropertyValueFactory<RecipePredicted, String>("firstRating"));
     

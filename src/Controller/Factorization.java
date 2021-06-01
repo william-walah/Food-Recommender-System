@@ -19,9 +19,12 @@ import Model.Pair;
 import Model.RecipePredicted;
 import com.opencsv.CSVWriter;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -37,35 +40,53 @@ public class Factorization implements Runnable, FactorizationData {
     private final MainDocumentController mdc;
     private TrainMatrix trainM;
     private TestMatrix testM;
-    private Dataset d;
+    private Dataset dataset;
     private FactorizationUtil utils;
     private List<Recipe> recipes;
     private List<User> users;
     private List<String> ingredients;
-    private List<double[][]> result;
     private HashMap<String, Integer> userMap;     //memetakan ID user kepada index matrix user & list user
     private HashMap<String, Integer> recipeMap;   //memetakan ID resep kepada index matrix resep & list resep
     private HashMap<String, Integer> ingredientMap;
     private HashMap<Integer, String> userMap_r;   //memetakan index matrix / list user dengan ID user
     private HashMap<Integer, String> recipeMap_r; //memetakan index matriks / list resep dengan ID resep
     private HashMap<Integer, String> ingredientMap_r;
+    private double[][] firstMethodRes;
+    private double[][] secondMethodRes;
     private int MAX_LOOP;
     private int INIT_USER_SPACE; //used to check if there is already customize user rating
     private double MIN_OBJECTIVE_VAL = 0.0;
     private int learningType; //fixed or iteratively change to 1/t
+    
+    /*
+    temporary attribute for automatic testing, delete later.
+    */
+    private double[] rmse_1;
+    private double[] rmse_2;
+    private long time1;
+    private long time2;
 
     public Factorization(MainDocumentController c) {
         this.recipes = new ArrayList<Recipe>();
         this.users = new ArrayList<User>();
         this.ingredients = new ArrayList<String>();
-        this.result = new ArrayList<double[][]>();
         this.userMap = new HashMap  <String, Integer>();
         this.userMap_r = new HashMap<Integer, String>();
         this.recipeMap = new HashMap<String, Integer>();
         this.recipeMap_r = new HashMap<Integer, String>();
         this.ingredientMap = new HashMap<String, Integer>();
         this.ingredientMap_r = new HashMap<Integer, String>();
+        this.firstMethodRes = null;
+        this.secondMethodRes = null;
         this.mdc = c;
+        
+        /*
+        temporary attribute for automatic testing, delete later.
+        */
+        rmse_1 = new double[3];
+        rmse_2 = new double[3];
+        time1 = 0L;
+        time2 = 0L;
     }
     
     /*
@@ -101,7 +122,7 @@ public class Factorization implements Runnable, FactorizationData {
             userCopy.add(new User(curr.getId()));
         }
         newFactor.setUsers(userCopy);
-        newFactor.setDataset(d.copy());
+        newFactor.setDataset(dataset.copy());
         newFactor.updateInitialSpace();
         return newFactor;
     }
@@ -129,9 +150,9 @@ public class Factorization implements Runnable, FactorizationData {
             
                 to be usable in jar, look below. Thanks: https://stackoverflow.com/questions/20389255/reading-a-resource-file-from-within-jar
             */
-            // InputStream in = getClass().getResourceAsStream("/data/dataset_recipes_ingredient_list_readable_java.csv");
+            InputStream in = getClass().getResourceAsStream("/data/recipe_ingredient_list.csv");
             //pengujian
-            InputStream in = getClass().getResourceAsStream("/data_pengujian/dataset_recipes_ingredient_list_readable_java.csv");
+            //InputStream in = getClass().getResourceAsStream("/data_pengujian/dataset_recipes_ingredient_list_readable_java.csv");
             BufferedReader br = new BufferedReader(new InputStreamReader(in));
             String line = "";
             String[] tempArr;
@@ -166,9 +187,9 @@ public class Factorization implements Runnable, FactorizationData {
     private boolean readUsersData() {
         boolean success = false;
         try {
-            // InputStream in = getClass().getResourceAsStream("/data/dataset_userId_list.csv");
+            InputStream in = getClass().getResourceAsStream("/data/userId_list.csv");
             // pengujian
-            InputStream in = getClass().getResourceAsStream("/data_pengujian/dataset_userId_list.csv");
+            // InputStream in = getClass().getResourceAsStream("/data_pengujian/dataset_userId_list.csv");
             BufferedReader br = new BufferedReader(new InputStreamReader(in));
             String line = "";
             int index = 0;
@@ -191,9 +212,9 @@ public class Factorization implements Runnable, FactorizationData {
     
     private boolean initializeDataset(){
         //first time Dataset d initialization
-        this.d = new Dataset(this.users.size(),this.recipes.size());
+        this.dataset = new Dataset(this.users.size(),this.recipes.size());
         //1. Read Dataset
-        boolean succesReadDataset = this.d.read(this.userMap,this.recipeMap);
+        boolean succesReadDataset = this.dataset.read(this.userMap,this.recipeMap);
         if (!succesReadDataset) return false;
         return true;
     }
@@ -214,11 +235,12 @@ public class Factorization implements Runnable, FactorizationData {
                 userMap_r.put(this.users.size(),userId);
                 //since userMap and userMap_r reference is from dataset d attribute, so setting them here is the same for the dataset attribute
                 this.users.add(new User(userId));   
+                this.dataset.addNewVector(v,customePair);
             } else if(this.users.size() < INIT_USER_SPACE) throw new Exception("User size is less than its initial size");
-            this.d.addNewVector(v,customePair);
-            System.out.println(users.size());
-            System.out.println(recipes.size());
-            System.out.println(ingredients.size());
+            else {
+                int idx = userMap.get(userId);
+                this.dataset.replaceCustomeUser(v, customePair, idx);
+            }
         } catch(Exception e){
             e.printStackTrace();
             System.exit(1);
@@ -240,12 +262,12 @@ public class Factorization implements Runnable, FactorizationData {
     public void run() {
         //set min obj value
         //SIZE OF OBJ * MIN.ERROR
-        this.MIN_OBJECTIVE_VAL = this.d.getTrainPair().size()*0.5;
-        this.mdc.insertLog("#1 Splitting Dataset\n");
+        this.MIN_OBJECTIVE_VAL = this.dataset.getTrainPair().size()*0.5;
+        this.mdc.insertLog("#1 Memecah Dataset\n");
         //1. Split Dataset
         boolean isSplitted = false;
         try {
-            List<Object> split_mat = this.d.split(this.userMap,this.recipeMap);
+            List<Object> split_mat = this.dataset.split(this.userMap,this.recipeMap);
             this.trainM = (TrainMatrix) split_mat.remove(0);
             this.testM = (TestMatrix) split_mat.remove(0);
             isSplitted = true;
@@ -253,14 +275,15 @@ public class Factorization implements Runnable, FactorizationData {
             e.printStackTrace();
         } finally {
             if (isSplitted) {
-                this.mdc.insertLog("Success splitting dataset\n");
+                this.mdc.insertLog("Berhasil memecah dataset.\n");
             } else {
-                this.mdc.insertLog("Error: Failed to split dataset\n");
+                this.mdc.insertLog("Error: Terjadi kesalahan dalam memecah dataset. Lihat riwayat error untuk lebih detail.\n");
+                System.exit(1);
                 return;
             }
         }
 
-        this.mdc.insertLog("#2 Initialize Matrix Factor\n");
+        this.mdc.insertLog("#2 Inisialisasi Matriks Faktor\n");
         //2. Initialize Matrix Factor  
         boolean initializeFactor = false;
         FactorMatrix userFactor = null;
@@ -281,7 +304,6 @@ public class Factorization implements Runnable, FactorizationData {
             // recipe x ingredient map matrix = n x o (mask matrix 1/0)
             recipeIngredientsMap = new FactorMatrix(this.trainM.getColLength(),
                     this.ingredients.size(),
-                    FactorType.RECIPE_ING_MAP,
                     this.recipes,
                     this.recipeMap,
                     this.ingredientMap);
@@ -292,9 +314,10 @@ public class Factorization implements Runnable, FactorizationData {
             e.printStackTrace();
         } finally {
             if (initializeFactor) {
-                this.mdc.insertLog("Success initializing matrix factor dataset\n");
+                this.mdc.insertLog("Berhasil menginisialisasi faktor matriks.\n");
             } else {
-                this.mdc.insertLog("Error: Failed to initialize matrix factor\n");
+                this.mdc.insertLog("Error: Terjadi kesalahan dalam proses inisialisasi. Lihat riwayat error untuk lebih detail.\n");
+                System.exit(1);
                 return;
             }
         }
@@ -306,10 +329,10 @@ public class Factorization implements Runnable, FactorizationData {
         double objFuncPrev_1 = 0.0;    
         double objFuncPrev_2 = 0.0;
         
-        this.mdc.insertLog("#3.1 Entering Optimization Loop process\n"
-                + "# Process No. 1 Detail:\n"
-                + "# Max Number of iteration: " + MAX_LOOP + "\n"
-                + "# Method: Factorization with two Matrix Factor-User & Recipes\n"
+        this.mdc.insertLog("#3.1 Memasuki iterasi untuk optimisasi model matriks faktor pertama.\n"
+                + "# Detail Proses No. 1:\n"
+                + "# Maksimal Iterasi: " + MAX_LOOP + "\n"
+                + "# Metode: Faktorisasi dengan dua buah matriks faktor, faktor Pengguna & Resep Makanan.\n"
         );
         long start = System.currentTimeMillis(); 
         String[] obj1_list = new String[1000];
@@ -318,17 +341,17 @@ public class Factorization implements Runnable, FactorizationData {
             while(loop-->0){
                 if(this.learningType > 0) this.utils.setLearningRate(1.0/((MAX_LOOP-loop)*1.0)); //iteratively 
                 //if(loop%250==0) {
-                    System.out.println("loop: "+(MAX_LOOP-loop));
+                //    System.out.println("loop: "+(MAX_LOOP-loop));
                 //}
                 double objectiveValue = utils.objectiveFunction_m1(
                         userFactor,
                         recipeFactor,
-                        this.d.getTrainPair()
+                        this.dataset.getTrainPair()
                 );
                 
                 obj1_list[MAX_LOOP-1-loop] = String.format("%.4f",objectiveValue);
                 //if(loop%250==0) {
-                    System.out.println("Objective Function: "+objectiveValue);
+                //    System.out.println("Objective Function: "+objectiveValue);
                 //}
                 //System.out.println(objectiveValue);
                 if(objectiveValue <= MIN_OBJECTIVE_VAL) break;
@@ -341,67 +364,60 @@ public class Factorization implements Runnable, FactorizationData {
                     utils.alternatingGradientDescent_m1(
                             userFactor,
                             recipeFactor,
-                            this.d.getTrainPair()
+                            this.dataset.getTrainPair()
                     );
                 }   
             }
             firstMethodOptimization = true;
         } catch(Exception e){
             e.printStackTrace();
-            System.exit(1);
         } finally {
-            if(firstMethodOptimization) this.mdc.insertLog("1st Optimization process done\n");
+            if(firstMethodOptimization) this.mdc.insertLog("Proses optimisasi metode pertama selesai\n");
             else{ 
-                this.mdc.insertLog("Error: Failure occured in optimization process\n");
+                this.mdc.insertLog("Error: Terjadi kesalahan dalam proses faktorisasi. Lihat riwayat error untuk lebih detail.\n");
+                System.exit(1);
                 return;
             }
         }
         long elapsedTime_1 = System.currentTimeMillis() - start;
-        try{
-            CSVWriter writer = new CSVWriter(new FileWriter("C:\\Users\\asus\\Desktop\\obj1.csv", false));
-            writer.writeNext(obj1_list);
-            writer.close();
-            this.mdc.insertLog("Model saved in csv\n");
-        } catch(Exception e) {
-            e.printStackTrace();
-        } 
+//        try{
+//            CSVWriter writer = new CSVWriter(new FileWriter("C:\\Users\\asus\\Desktop\\obj1.csv", false));
+//            writer.writeNext(obj1_list);
+//            writer.close();
+//            this.mdc.insertLog("Model saved in csv\n");
+//        } catch(Exception e) {
+//            e.printStackTrace();
+//        } 
         
         
-        this.mdc.insertLog("#3.2 Entering Optimization Loop process\n"
-                + "# Process No. 2 Detail:\n"
-                + "# Max Number of iteration: " + MAX_LOOP + "\n"
-                + "# Method: Factorization with two Matrix Factor-User & Ingredients\n"
+        this.mdc.insertLog("#3.2 Memasuki iterasi untuk optimisasi model matriks faktor kedua.\n"
+                + "# Detail Proses No. 2:\n"
+                + "# Maksimal Iterasi: " + MAX_LOOP + "\n"
+                + "# Metode: Faktorisasi dengan dua buah matriks faktor, faktor Pengguna & Bahan Makanan.\n"
+                + "          Serta memanfaatkan matriks biner yang memetakan resep & bahan makanan.\n"
         );
         start = System.currentTimeMillis();  
         String[] obj2_list = new String[1000];
         try {
             int loop = MAX_LOOP;
             while (loop-- > 0) {
-                System.out.println("loop: " + (MAX_LOOP - loop));
+                //System.out.println("loop: " + (MAX_LOOP - loop));
                 if(this.learningType > 0) this.utils.setLearningRate(1.0/((MAX_LOOP-loop)*1.0)); //iteratively 
-                MatrixUtil.sumAll(userFactor_2.getEntry());
-                MatrixUtil.sumAll(ingredientFactor.getEntry());
+                //MatrixUtil.sumAll(userFactor_2.getEntry());
+                //MatrixUtil.sumAll(ingredientFactor.getEntry());
                 double[][] currPrediction = MatrixUtil.multiplyWithTransposing(
                         MatrixUtil.multiplyWithTransposing(userFactor_2.getEntry(), ingredientFactor.getEntry(), false),
                         recipeIngredientsMap.getEntry(),
                         false); 
-                
-                for (int i = 0; i < currPrediction.length; i++) {
-                    for (int j = 0; j < currPrediction[i].length; j++) {
-                        System.out.print(currPrediction[i][j]+",");
-                    }
-                    System.out.println("");
-                }
-                System.out.println("");
                         
                 double objectiveValue = utils.objectiveFunction_m2(
                         currPrediction,
                         userFactor_2,
                         ingredientFactor,
-                        this.d.getTrainPair()
+                        this.dataset.getTrainPair()
                 );
                 obj2_list[MAX_LOOP-1-loop] = String.format("%.4f",objectiveValue);
-                System.out.println("Objective Function: "+objectiveValue);
+                //System.out.println("Objective Function: "+objectiveValue);
                 if (objectiveValue <= MIN_OBJECTIVE_VAL) {
                     break;
                 } else if (Math.abs(objFuncPrev_2 - objectiveValue) <= 0.00001) {
@@ -416,115 +432,126 @@ public class Factorization implements Runnable, FactorizationData {
                             userFactor_2,
                             ingredientFactor,
                             recipeIngredientsMap,
-                            this.d.getTrainPair()
+                            this.dataset.getTrainPair()
                     );
                 }
             }
             secondMethodOptimization = true;
         } catch (Exception e) {
             e.printStackTrace();
-            System.exit(1);
         } finally {
             if (secondMethodOptimization) {
-                this.mdc.insertLog("2nd Optimization process done\n");
+                this.mdc.insertLog("Proses optimisasi metode kedua selesai.\n");
             } else {
-                this.mdc.insertLog("Error: Failure occured in optimization process\n");
+                this.mdc.insertLog("Error: Terjadi kesalahan dalam proses faktorisasi. Lihat riwayat error untuk lebih detail.\n");
+                System.exit(1);
                 return;
             }
         }
         long elapsedTime_2 = System.currentTimeMillis() - start;
 
-        try{
-            CSVWriter writer = new CSVWriter(new FileWriter("C:\\Users\\asus\\Desktop\\obj2.csv", false));
-            writer.writeNext(obj2_list);
-            writer.close();
-            this.mdc.insertLog("Model saved in csv\n");
-        } catch(Exception e) {
-            e.printStackTrace();
-        } 
+//        try{
+//            CSVWriter writer = new CSVWriter(new FileWriter("C:\\Users\\asus\\Desktop\\obj2.csv", false));
+//            writer.writeNext(obj2_list);
+//            writer.close();
+//            this.mdc.insertLog("Model saved in csv\n");
+//        } catch(Exception e) {
+//            e.printStackTrace();
+//        } 
         
-        double[][] model1 = userFactor.multiply(recipeFactor.transpose());
-        double[][] model2 = MatrixUtil.multiplyWithTransposing(
+        this.firstMethodRes = userFactor.multiply(recipeFactor.transpose());
+        this.secondMethodRes = MatrixUtil.multiplyWithTransposing(
                 MatrixUtil.multiplyWithTransposing(userFactor_2.getEntry(), ingredientFactor.getEntry(), false),
                 recipeIngredientsMap.getEntry(),
                 false); 
 
-        this.result.add(model1);
-        this.result.add(model2);
+        System.out.println(firstMethodRes.length +" x "+firstMethodRes[0].length);
+        System.out.println(secondMethodRes.length +" x "+secondMethodRes[0].length);
         
         double rmse_1_test = utils.rmse(
-                this.d.getTestPair(),
-                model1,
+                this.dataset.getTestPair(),
+                firstMethodRes,
                 this.testM.getEntry(),
                 0
         );
         
         double rmse_1_train = utils.rmse(
-                this.d.getTrainPair(),
-                model1,
+                this.dataset.getTrainPair(),
+                firstMethodRes,
                 this.trainM.getEntry(),
                 0
         );
         
         double rmse_1_data = utils.rmse(
-                this.d.getDataPair(),
-                model1,
-                this.d.getEntry(),
+                this.dataset.getDataPair(),
+                firstMethodRes,
+                this.dataset.getEntry(),
                 0
         );
         
         double rmse_2_test = utils.rmse(
-                this.d.getTestPair(),
-                model2,
+                this.dataset.getTestPair(),
+                secondMethodRes,
                 this.testM.getEntry(),
                 1
         );
         
         double rmse_2_train = utils.rmse(
-                this.d.getTrainPair(),
-                model2,
+                this.dataset.getTrainPair(),
+                secondMethodRes,
                 this.trainM.getEntry(),
                 1
         );
         
         double rmse_2_data = utils.rmse(
-                this.d.getDataPair(),
-                model2,
-                this.d.getEntry(),
+                this.dataset.getDataPair(),
+                secondMethodRes,
+                this.dataset.getEntry(),
                 1
         );
-
-        this.mdc.insertLog("Result:\n"
-                + "############################\n"
-                + "# FIRST OPTIMIZATION METHOD\n"
-                + String.format("# RMSE (Test  Set) = %.3f\n",rmse_1_test)
-                + String.format("# RMSE (Train Set) = %.3f\n",rmse_1_train)
-                + String.format("# RMSE (Data  Set) = %.3f\n",rmse_1_data)
-                + String.format("# Elapsed Time: %.3fs\n", elapsedTime_1/1000F)
-                + "############################\n"
-                + "############################\n"
-                + "# SECOND OPTIMIZATION METHOD\n"
-                + String.format("# RMSE (Test  Set) = %.5f\n",rmse_2_test)
-                + String.format("# RMSE (Train Set) = %.5f\n",rmse_2_train)
-                + String.format("# RMSE (Data  Set) = %.5f\n",rmse_2_data)
-                + String.format("# Elapsed Time: %.3fs\n", elapsedTime_2/1000F)
-                + "############################\n"
-                + "Factorization Done.\n");
+        
+        rmse_1[0] = rmse_1_test;
+        rmse_1[1] = rmse_1_train;
+        rmse_1[2] = rmse_1_data;
+        
+        rmse_2[0] = rmse_2_test;
+        rmse_2[1] = rmse_2_train;
+        rmse_2[2] = rmse_2_data;
+        
+        time1 = elapsedTime_1;
+        time2 = elapsedTime_2;
+//        this.mdc.insertLog("Hasil RMSE:\n"
+//                + "############################\n"
+//                + "# Metode Faktorisasi Pertama\n"
+//                + String.format("# RMSE (Test  Set) = %.3f\n",rmse_1_test)
+//                + String.format("# RMSE (Train Set) = %.3f\n",rmse_1_train)
+//                + String.format("# RMSE (Data  Set) = %.3f\n",rmse_1_data)
+//                + String.format("# Waktu Berjalan: %.3fs\n", elapsedTime_1/1000F)
+//                + "############################\n"
+//                + "\n"
+//                + "############################\n"
+//                + "# SECOND OPTIMIZATION METHOD\n"
+//                + String.format("# RMSE (Test  Set) = %.5f\n",rmse_2_test)
+//                + String.format("# RMSE (Train Set) = %.5f\n",rmse_2_train)
+//                + String.format("# RMSE (Data  Set) = %.5f\n",rmse_2_data)
+//                + String.format("# Waktu Berjalan: %.3fs\n", elapsedTime_2/1000F)
+//                + "############################\n"
+//                + "\n"
+//                + "Seluruh proeses faktorisasi telah selesai.\n");
     }
     
     protected List<RecipePredicted> getUserPrediction(String userId){
+        System.out.println(userId);
         int userIndex = this.userMap.get(userId);
         List<RecipePredicted> result = new ArrayList<RecipePredicted>();
         try{
-            double[][] firstMethodResult = this.result.get(0);
-            double[][] secondMethodResult = this.result.get(1);
             for (Recipe curr: this.recipes) {
                 int recipeIndex = this.recipeMap.get(curr.getId());
                 result.add(new RecipePredicted(
                         curr.getName(),
-                        String.format("%.2f",this.d.getEntryByIndex(userIndex, recipeIndex)),
-                        String.format("%.2f",firstMethodResult[userIndex][recipeIndex]/(utils.getLatentSize()*5)),
-                        String.format("%.2f",secondMethodResult[userIndex][recipeIndex]/(utils.getLatentSize()*5*curr.getIngredientLength()))
+                        String.format("%.2f",this.dataset.getEntryByIndex(userIndex, recipeIndex)),
+                        String.format("%.2f",firstMethodRes[userIndex][recipeIndex]/(utils.getLatentSize()*5)),
+                        String.format("%.2f",secondMethodRes[userIndex][recipeIndex]/(utils.getLatentSize()*5*curr.getIngredientLength()))
                 ));
             }
         } catch(Exception e){
@@ -535,7 +562,7 @@ public class Factorization implements Runnable, FactorizationData {
     }
 
     public void setDataset(Dataset d) {
-        this.d = d;
+        this.dataset = d;
     }
 
     public List<Recipe> getRecipes() {
@@ -627,5 +654,15 @@ public class Factorization implements Runnable, FactorizationData {
     @Override
     public HashMap<Integer, String> getIngredientMapReversed() {
         return ingredientMap_r;
+    }
+    
+    /*
+    getter for temporary attributes for automatic testing purpose, delete later
+    */
+    public double[] getFirstRMSE(){return this.rmse_1;}
+    public double[] getSecondRMSE(){return this.rmse_2;}
+    public long getTime(int type){
+        if(type==1) return time1;
+        else return time2;
     }
 }

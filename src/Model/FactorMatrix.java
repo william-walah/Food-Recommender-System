@@ -17,7 +17,6 @@ import java.util.stream.Stream;
  * @author asus
  */
 public class FactorMatrix extends Matrix{
-    private FactorType type;
     
     public FactorMatrix(FactorMatrix copy){
         super(copy.getRowLength(),copy.getColLength());
@@ -26,58 +25,56 @@ public class FactorMatrix extends Matrix{
             for (int j = 0; j < copyEntry[i].length; j++) {
                 this.entry[i][j] = copyEntry[i][j];
             }
-        }
+        }        
     }
     
     public FactorMatrix(int row, int col, FactorType t){
         super(row,col);
-        this.type = t;
         
         //initialize entry between 1.0 - 5.0
-//        Random r = new Random();
-//        Supplier<Double> randomValue = () -> (double) (r.nextInt(5)+1);
-//        for (int i = 0; i < entry.length; i++) {
-//            entry[i] = Stream.generate(randomValue).limit(entry[i].length).mapToDouble(Double::valueOf).toArray();
-//        }   
+        Random r = new Random();
+        Supplier<Double> randomValue = () -> (double) (r.nextInt(5)+1);
+        for (int i = 0; i < entry.length; i++) {
+            entry[i] = Stream.generate(randomValue).limit(entry[i].length).mapToDouble(Double::valueOf).toArray();
+        }   
         
         //pengujian metode 1
-        double[][] newEntry = null;
-        if(this.type == FactorType.USER){
-            newEntry = new double[][]{{4,1},
-                {5,1},
-                {3,4},
-                {5,4}};
-        } else if(this.type == FactorType.RECIPES) {
-            newEntry = new double[][]{{2,3},
-                {1,2},
-                {5,2},
-                {1,1}};
-        } else {
-            newEntry = new double[][]{
-                {2.0,1.0},
-                {1.0,3.0},
-                {5.0,3.0},
-                {2.0,4.0},
-                {5.0,5.0},
-                {4.0,4.0},
-                {4.0,4.0},
-                {2.0,4.0},
-                {2.0,5.0},
-                {3.0,2.0},
-                {4.0,1.0},
-                {3.0,5.0},    
-            };
-        }
-       this.entry = newEntry;
+//        double[][] newEntry = null;
+//        if(this.type == FactorType.USER){
+//            newEntry = new double[][]{{4,1},
+//                {5,1},
+//                {3,4},
+//                {5,4}};
+//        } else if(this.type == FactorType.RECIPES) {
+//            newEntry = new double[][]{{2,3},
+//                {1,2},
+//                {5,2},
+//                {1,1}};
+//        } else {
+//            newEntry = new double[][]{
+//                {2.0,1.0},
+//                {1.0,3.0},
+//                {5.0,3.0},
+//                {2.0,4.0},
+//                {5.0,5.0},
+//                {4.0,4.0},
+//                {4.0,4.0},
+//                {2.0,4.0},
+//                {2.0,5.0},
+//                {3.0,2.0},
+//                {4.0,1.0},
+//                {3.0,5.0},    
+//            };
+//        }
+//       this.entry = newEntry;
     }
     
     // unique for ingredient recipe matrix map
-    public FactorMatrix(int row, int col, FactorType t, 
+    public FactorMatrix(int row, int col,
             List<Recipe> recipe,
             HashMap<String, Integer> recipeIdx,
             HashMap<String, Integer> ingredientIdx){
         super(row,col);
-        this.type = t;
         
         for (Recipe curr: recipe) {
             int rowIdx = recipeIdx.get(curr.getId());
@@ -87,14 +84,6 @@ public class FactorMatrix extends Matrix{
                 entry[rowIdx][colIdx] = 1.0;
             }
         }
-        
-        for (int i = 0; i < entry.length; i++) {
-            for (int j = 0; j < entry[i].length; j++) {
-                System.out.print(entry[i][j]+",");
-            }
-            System.out.println("");
-        }
-        System.out.println("");
     }
     
     public double[] getFactorByIndex(int i){
