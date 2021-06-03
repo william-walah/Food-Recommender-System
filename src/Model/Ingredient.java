@@ -40,14 +40,6 @@ public class Ingredient {
         return this.ingredients;
     }
     
-    public String getStringIngredients() {
-        String res = "";
-        for(String i: this.ingredients){
-            res += i;
-        }
-        return res;
-    }
-    
     public List<String> getIngredientIds() {
         return this.ingredientsId;
     }

@@ -177,7 +177,7 @@
                               </TableView>
                            </children>
                         </StackPane>
-                        <Button fx:id="custom_recom" layoutX="435.0" layoutY="439.0" mnemonicParsing="false" onAction="#doCustomeRecommendation" prefHeight="31.0" prefWidth="205.0" text="Rekomendasikan Saya" textFill="#0e540a">
+                        <Button fx:id="custom_recom" layoutX="435.0" layoutY="439.0" mnemonicParsing="false" onAction="#doCustomRecommendation" prefHeight="31.0" prefWidth="205.0" text="Rekomendasikan Saya" textFill="#0e540a">
                            <font>
                               <Font name="Arial Bold" size="15.0" />
                            </font></Button>

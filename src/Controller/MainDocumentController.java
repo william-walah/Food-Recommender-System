@@ -448,7 +448,7 @@ public class MainDocumentController implements Initializable {
     }
 
     @FXML
-    private void doCustomeRecommendation(ActionEvent event) {
+    private void doCustomRecommendation(ActionEvent event) {
         if(isParameterSet && !isInProcess) {
             programStatus.setText("Proses faktorisasi khusus pengguna sedang berjalan...");
             custom_recom.setDisable(true);

@@ -156,12 +156,12 @@ public class FactorizationUtil {
                         on each times error times pair calculated and then added to 
                         res (the Sigma cover till these operation)
                        
-                       res = MatrixUtil.vectorCalculation(res, 
-                               //error times pair minus lambda times curr latent vector
-                               MatrixUtil.vectorCalculation(pairLatent, lambdaTarget, 0, 1, error),
-                               1
-                       );
                        */
+//                       res = MatrixUtil.vectorCalculation(res, 
+//                                //error times pair minus lambda times curr latent vector
+//                               MatrixUtil.vectorCalculation(pairLatent, lambdaTarget, 0, 1, error),
+//                               1
+//                       );
                     }
                 }
                 res = MatrixUtil.vectorCalculation(res, lambdaTarget, 0);
@@ -188,12 +188,12 @@ public class FactorizationUtil {
                             on each times error times pair calculated and then added to 
                             res (the Sigma cover till these operation)
                        
-                       res = MatrixUtil.vectorCalculation(res, 
-                               //error times pair minus lambda times curr latent vector
-                               MatrixUtil.vectorCalculation(pairLatent, lambdaTarget, 0, 1, error),
-                               1
-                       );
                         */
+//                        res = MatrixUtil.vectorCalculation(res, 
+//                                //error times pair minus lambda times curr latent vector
+//                                MatrixUtil.vectorCalculation(pairLatent, lambdaTarget, 0, 1, error),
+//                                1
+//                        );
                     }
                 }
                 res = MatrixUtil.vectorCalculation(res, lambdaTarget, 0);
