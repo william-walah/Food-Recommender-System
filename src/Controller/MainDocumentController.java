@@ -665,19 +665,28 @@ public class MainDocumentController implements Initializable {
     
     @FXML
     private void automaticTesting(ActionEvent event){
-        String[] vectorLength = new String[] {"2","3","4","5","6","7","8","9","10"};
-        String[] maxIteration = new String[] {"100","500","1000"};
-        String[] lambdaValue = new String[] {"0.5","1","2","3"};
-        String[] lrValue = new String[] {"0.1","0.01","0.001","0.0001","0.00001"};
-//        String[] vectorLength = new String[] {"2","3"};
-//        String[] maxIteration = new String[] {"10"};
-//        String[] lambdaValue = new String[] {"0.5","1"};
-//        String[] lrValue = new String[] {"0.1","0.01"};
+//        String[] vectorLength = new String[] {"2","3","4","5","6","7","8","9","10"};
+//        String[] maxIteration = new String[] {"100","500","1000"};
+//        String[] lambdaValue = new String[] {"0.5","1","2","3"};
+//        String[] lrValue = new String[] {"0.1","0.01","0.001","0.0001","0.00001"};
+
+        String[] vectorLength = new String[] {"50","100"};
+        String[] maxIteration = new String[] {"400"};
+        String[] lambdaValue = new String[] {"0.1"};
+        String[] lrValue = new String[] {"0.001","0.0001"};
+
+//        String[] vectorLength = new String[] {"2"};
+//        String[] maxIteration = new String[] {"1000"};
+//        String[] lambdaValue = new String[] {"0.1","0.5","1","2","3"};
+//        String[] lrValue = new String[] {"0.1","0.01","0.001","0.0001","0.00001"};
+
+        ((Button)event.getSource()).setDisable(true);
         String lrType = "Fixed";
         Thread automaticTest = new Thread(){
             @Override
             public void run(){
                 startBtn.setDisable(true);
+                int count = 1;
                 custom_recom.setDisable(true);
                 try{
                     for(String vector: vectorLength){
@@ -685,6 +694,7 @@ public class MainDocumentController implements Initializable {
                             for(String lambda: lambdaValue){
                                 for(String lr: lrValue){
                                     firstProcess.setParameter(vector,iterate,lambda,lr,lrType);
+                                    System.out.println("Proses ke-"+count);
                                     System.out.printf("Mulai proses untuk parameter: [%s, %s, %s, %s]\n",vector,iterate,lambda,lr);
                                     insertLog(String.format("Mulai proses untuk parameter: [%s, %s, %s, %s]\n",vector,iterate,lambda,lr));
                                     Thread mainThread = new Thread(firstProcess);
@@ -700,7 +710,7 @@ public class MainDocumentController implements Initializable {
                                         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd-MM_HH_mm");  
                                         LocalDateTime now = LocalDateTime.now();  
                                         String time = (dtf.format(now));
-                                        File myObj = new File("C:\\Users\\asus\\Desktop\\Result\\"+"result "+time+".txt");
+                                        File myObj = new File("C:\\Users\\asus\\Desktop\\Result\\n = "+vector+"\\result "+time+".txt");
                                         myObj.createNewFile();
                                         FileWriter writer = new FileWriter(myObj);
                                         String s = String.format("Hasil dengan parameter [%s, %s, %s, %s]:\n",vector,iterate,lambda,lr)
@@ -725,6 +735,7 @@ public class MainDocumentController implements Initializable {
                                     }
                                     System.out.printf("proses selesai untuk parameter: [%s, %s, %s, %s]\n",vector,iterate,lambda,lr);
                                     insertLog(String.format("proses selesai untuk parameter: [%s, %s, %s, %s]\n",vector,iterate,lambda,lr));
+                                    count++;
                                 }
                             }
                         }
@@ -732,6 +743,7 @@ public class MainDocumentController implements Initializable {
                 } catch (InterruptedException ie) {
                     ie.printStackTrace();
                 }
+                ((Button)event.getSource()).setDisable(false);
                 startBtn.setDisable(false);
                 custom_recom.setDisable(false);
             }
@@ -789,7 +801,7 @@ public class MainDocumentController implements Initializable {
                                     updateRecommendationTable();
                                     user_recom_info.setText("Sedang Menampilkan Rekomendasi User: "+u.getId());
                                 } else {
-                                    programStatus.setText("Model is not factorized yet for the first time. Can't give recommendation.");
+                                    programStatus.setText("Faktorisasi untuk dataset belum pernah dijalankan. Tidak dapat memberikan rekomendasi.");
                                 }
                             });
                             setGraphic(btn);

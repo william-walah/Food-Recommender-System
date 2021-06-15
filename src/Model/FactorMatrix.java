@@ -40,12 +40,12 @@ public class FactorMatrix extends Matrix{
         
         //pengujian metode 1
 //        double[][] newEntry = null;
-//        if(this.type == FactorType.USER){
+//        if(t == FactorType.USER){
 //            newEntry = new double[][]{{4,1},
 //                {5,1},
 //                {3,4},
 //                {5,4}};
-//        } else if(this.type == FactorType.RECIPES) {
+//        } else if(t == FactorType.RECIPES) {
 //            newEntry = new double[][]{{2,3},
 //                {1,2},
 //                {5,2},

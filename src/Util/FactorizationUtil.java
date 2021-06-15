@@ -410,4 +410,8 @@ public class FactorizationUtil {
     public int getLatentSize() {
         return LATENT_SIZE;
     }
+    
+    public double getLambda(){ return this.LAMBDA;}
+    
+    public double getLearningRate(){ return this.LEARNING_RATE;}
 }
