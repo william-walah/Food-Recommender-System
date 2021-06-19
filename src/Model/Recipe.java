@@ -1,17 +1,10 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package Model;
 
-import java.util.ArrayList;
-import java.util.List;
 import javafx.beans.property.SimpleStringProperty;
 
 /**
  *
- * @author asus
+ * @author William Walah - 2017730054
  */
 public class Recipe {
 
@@ -23,12 +16,6 @@ public class Recipe {
     public Recipe(String... data) {
         this.id = data[0];
         this.name = new SimpleStringProperty(data[1]);
-        //WARNING
-        //BECAUSE THE DATASET CONTAINS DUPLICATE INGREDIENTS ID
-        //FOR DIFFERENT INGREDIENTS NAME
-        //GETTING INGREDIENT LENGTH MUST SEARCH FOR NUMBER OF
-        //UNIQUE INGREDIENTS ID, AS THAT LENGTH IS
-        //THE ONE USED IN INGREDIENT X RECIPE MASK MATRIX
         this.ingredient = new Ingredient(data[2],data[3]);
         this.userRating = new SimpleStringProperty("0");
     }

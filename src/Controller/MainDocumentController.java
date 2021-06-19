@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package Controller;
 
 import Model.Recipe;
@@ -13,7 +8,6 @@ import com.opencsv.CSVWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -40,30 +34,24 @@ import javafx.event.ActionEvent;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.RadioButton;
-import javafx.scene.control.ScrollBar;
-import javafx.scene.control.Tab;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableColumn.CellEditEvent;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
-import javafx.scene.control.TextFormatter.Change;
 import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.Pane;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
 import javafx.util.Callback;
-import javafx.util.converter.IntegerStringConverter;
 
 /**
- * FXML Controller class
+ * UI FXML Controller class
  *
- * @author asus
+ * @author William Walah - 2017730054
  */
 public class MainDocumentController implements Initializable {
 
@@ -663,93 +651,6 @@ public class MainDocumentController implements Initializable {
         }
     }
     
-    @FXML
-    private void automaticTesting(ActionEvent event){
-        String[] vectorLength = new String[] {"2"};
-        String[] maxIteration = new String[] {"400"};
-        String[] lambdaValue = new String[] {"0.1"};
-        String[] lrValue = new String[] {"0.001","0.0001"};
-
-//        String[] vectorLength = new String[] {"50","100"};
-//        String[] maxIteration = new String[] {"400"};
-//        String[] lambdaValue = new String[] {"0.1"};
-//        String[] lrValue = new String[] {"0.001","0.0001"};
-
-//        String[] vectorLength = new String[] {"2"};
-//        String[] maxIteration = new String[] {"1000"};
-//        String[] lambdaValue = new String[] {"0.1","0.5","1","2","3"};
-//        String[] lrValue = new String[] {"0.1","0.01","0.001","0.0001","0.00001"};
-
-        ((Button)event.getSource()).setDisable(true);
-        String lrType = "Fixed";
-        Thread automaticTest = new Thread(){
-            @Override
-            public void run(){
-                startBtn.setDisable(true);
-                int count = 1;
-                custom_recom.setDisable(true);
-                try{
-                    for(String vector: vectorLength){
-                        for(String iterate: maxIteration){
-                            for(String lambda: lambdaValue){
-                                for(String lr: lrValue){
-                                    firstProcess.setParameter(vector,iterate,lambda,lr,lrType);
-                                    System.out.println("Proses ke-"+count);
-                                    System.out.printf("Mulai proses untuk parameter: [%s, %s, %s, %s]\n",vector,iterate,lambda,lr);
-                                    insertLog(String.format("Mulai proses untuk parameter: [%s, %s, %s, %s]\n",vector,iterate,lambda,lr));
-                                    Thread mainThread = new Thread(firstProcess);
-                                    mainThread.start();
-                                    while(mainThread.getState() != Thread.State.TERMINATED){
-                                        Thread.sleep(1000);
-                                    }
-                                    try{
-                                        double[] rmse1 = firstProcess.getFirstRMSE();
-                                        double[] rmse2 = firstProcess.getSecondRMSE();
-                                        long elapsedTime_1 = firstProcess.getTime(1);
-                                        long elapsedTime_2 = firstProcess.getTime(2);
-                                        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd-MM_HH_mm");  
-                                        LocalDateTime now = LocalDateTime.now();  
-                                        String time = (dtf.format(now));
-                                        File myObj = new File("C:\\Users\\asus\\Desktop\\Result\\n = "+vector+"\\result "+time+".txt");
-                                        myObj.createNewFile();
-                                        FileWriter writer = new FileWriter(myObj);
-                                        String s = String.format("Hasil dengan parameter [%s, %s, %s, %s]:\n",vector,iterate,lambda,lr)
-                                            + "############################\n"+ "############################\n"
-                                            + String.format("# RMSE (Test  Set) = %.3f\n",rmse1[0])
-                                            + String.format("# RMSE (Train Set) = %.3f\n",rmse1[1])
-                                            + String.format("# RMSE (Data  Set) = %.3f\n",rmse1[2])
-                                            + String.format("# Waktu Berjalan: %.3fs\n", elapsedTime_1/1000F)
-                                            + "############################\n"
-                                            + "\n"
-                                            + "############################\n"
-                                            + "# SECOND OPTIMIZATION METHOD\n"
-                                            + String.format("# RMSE (Test  Set) = %.5f\n",rmse2[0])
-                                            + String.format("# RMSE (Train Set) = %.5f\n",rmse2[1])
-                                            + String.format("# RMSE (Data  Set) = %.5f\n",rmse2[2])
-                                            + String.format("# Waktu Berjalan: %.3fs\n", elapsedTime_2/1000F)
-                                            + "############################\n";
-                                        writer.write(s);
-                                        writer.close();
-                                    } catch(IOException e) {
-                                        e.printStackTrace();
-                                    }
-                                    System.out.printf("proses selesai untuk parameter: [%s, %s, %s, %s]\n",vector,iterate,lambda,lr);
-                                    insertLog(String.format("proses selesai untuk parameter: [%s, %s, %s, %s]\n",vector,iterate,lambda,lr));
-                                    count++;
-                                }
-                            }
-                        }
-                    }
-                } catch (InterruptedException ie) {
-                    ie.printStackTrace();
-                }
-                ((Button)event.getSource()).setDisable(false);
-                startBtn.setDisable(false);
-                custom_recom.setDisable(false);
-            }
-        };
-        automaticTest.start();
-    }
     
     private void initializeTable() {
         /*

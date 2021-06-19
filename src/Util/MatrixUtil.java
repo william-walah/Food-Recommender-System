@@ -1,17 +1,8 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package Util;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  *
- * @author asus
+ * @author William Walah - 2017730054
  */
 public class MatrixUtil {
 
@@ -45,8 +36,6 @@ public class MatrixUtil {
     }
     
     public static double[][] scalarMultiplication(double scalar, double[][] matrix) {
-//        System.out.println("scalar multiply");
-//        System.out.println(matrix.length+"x"+matrix[0].length);
         double[][] res = new double[matrix.length][matrix[0].length];
         for (int i = 0; i < res.length; i++) {
             for (int j = 0; j < res[i].length; j++) {
@@ -126,8 +115,6 @@ public class MatrixUtil {
     public static double[] vectorMultiplyMatrix(double[] v, double[][] m){
         if((v.length != m[0].length) && (v.length != m.length)) throw new RuntimeException("Error: mismatch vector length with 1 of the matrix's dimension");
         else if(m.length == 1) throw new RuntimeException("Error: incorrect matrix dimension (1 x N), do you mean to use the other method? (vector, vector)");
-//        System.out.println(v.length);
-//        System.out.println(m.length+"x"+m[0].length);
         int dimen = v.length == m.length ? m[0].length : m.length;
         int type = v.length == m.length ? 0 : 1; //0 = row dimension, 1 = col dimension
         double[] res = new double[dimen];
@@ -136,7 +123,6 @@ public class MatrixUtil {
             double newVal = vectorMultiplication(v,mDimens);
             res[i] = newVal;
         }
-//        System.out.println(dimen);
         return res;
     }   
     

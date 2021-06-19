@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package Controller;
 
 import Interface.FactorizationData;
@@ -17,14 +12,9 @@ import Model.TrainMatrix;
 import Model.User;
 import Model.Pair;
 import Model.RecipePredicted;
-import com.opencsv.CSVWriter;
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -32,8 +22,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 
 /**
+ * Controller class to do factorization process
  *
- * @author asus
+ * @author William Walah - 2017730054
  */
 public class Factorization implements Runnable, FactorizationData {
 
@@ -56,14 +47,6 @@ public class Factorization implements Runnable, FactorizationData {
     private int MAX_LOOP;
     private int INIT_USER_SPACE; //used to check if there is already customize user rating
     private int learningType; //fixed or iteratively change to 1/t
-    
-    /*
-    temporary attribute for automatic testing, delete later.
-    */
-    private double[] rmse_1;
-    private double[] rmse_2;
-    private long time1;
-    private long time2;
 
     public Factorization(MainDocumentController c) {
         this.recipes = new ArrayList<Recipe>();
@@ -78,14 +61,6 @@ public class Factorization implements Runnable, FactorizationData {
         this.firstMethodRes = null;
         this.secondMethodRes = null;
         this.mdc = c;
-        
-        /*
-        temporary attribute for automatic testing, delete later.
-        */
-        rmse_1 = new double[3];
-        rmse_2 = new double[3];
-        time1 = 0L;
-        time2 = 0L;
     }
     
     /*
@@ -131,9 +106,6 @@ public class Factorization implements Runnable, FactorizationData {
         boolean successReadingUsers = this.readUsersData();
         if(successReadingUsers) updateInitialSpace();
         boolean successInitializingDataset = this.initializeDataset();
-        System.out.println("Reading recipes data status: "+successReadingRecipes);
-        System.out.println("Reading user data status   : "+successReadingUsers);
-        System.out.println("Initializing dataset       : "+successInitializingDataset);
         return successReadingRecipes && successReadingUsers && successInitializingDataset;
     }
     
@@ -149,9 +121,9 @@ public class Factorization implements Runnable, FactorizationData {
             
                 to be usable in jar, look below. Thanks: https://stackoverflow.com/questions/20389255/reading-a-resource-file-from-within-jar
             */
-            //InputStream in = getClass().getResourceAsStream("/data/recipe_ingredient_list.csv");
+            InputStream in = getClass().getResourceAsStream("/data/recipe_ingredient_list.csv");
             //pengujian
-            InputStream in = getClass().getResourceAsStream("/data_pengujian/dataset_recipes_ingredient_list_readable_java.csv");
+            //InputStream in = getClass().getResourceAsStream("/data_pengujian/dataset_recipes_ingredient_list_readable_java.csv");
             BufferedReader br = new BufferedReader(new InputStreamReader(in));
             String line = "";
             String[] tempArr;
@@ -186,9 +158,9 @@ public class Factorization implements Runnable, FactorizationData {
     private boolean readUsersData() {
         boolean success = false;
         try {
-            //InputStream in = getClass().getResourceAsStream("/data/userId_list.csv");
+            InputStream in = getClass().getResourceAsStream("/data/userId_list.csv");
             // pengujian
-            InputStream in = getClass().getResourceAsStream("/data_pengujian/dataset_userId_list.csv");
+            // InputStream in = getClass().getResourceAsStream("/data_pengujian/dataset_userId_list.csv");
             BufferedReader br = new BufferedReader(new InputStreamReader(in));
             String line = "";
             int index = 0;
@@ -297,20 +269,16 @@ public class Factorization implements Runnable, FactorizationData {
         try {
             // user factor = m x f
             userFactor = new FactorMatrix(this.trainM.getRowLength(), utils.getLatentSize(), FactorType.USER);
-            System.out.println("user factor: "+this.trainM.getRowLength()+"x"+utils.getLatentSize());
             // recipe factor = n x f
             recipeFactor = new FactorMatrix(this.trainM.getColLength(), utils.getLatentSize(), FactorType.RECIPES);
-            System.out.println("recipe factor: "+this.trainM.getColLength()+"x"+utils.getLatentSize());
             // ingredient factor = o x f
             ingredientFactor = new FactorMatrix(this.ingredients.size(), utils.getLatentSize(), FactorType.INGREDIENTS);
-            System.out.println("ingredient factor: "+this.ingredients.size()+"x"+utils.getLatentSize());
             // recipe x ingredient map matrix = n x o (mask matrix 1/0)
             recipeIngredientsMap = new FactorMatrix(this.trainM.getColLength(),
                     this.ingredients.size(),
                     this.recipes,
                     this.recipeMap,
                     this.ingredientMap);
-            System.out.println("recipe ingre map: "+this.trainM.getColLength()+"x"+this.ingredients.size());
             userFactor_2 = new FactorMatrix(userFactor);
             initializeFactor = true;
         } catch (Exception e) {
@@ -358,7 +326,6 @@ public class Factorization implements Runnable, FactorizationData {
                         this.dataset.getTrainPair()
                 );
                 
-                //System.out.println(objectiveValue);
                 double rmse = this.utils.rmse(this.dataset.getTrainPair(), currPrediction, trainM.getEntry(), 0);
                 if(max_value > rmse){
                     max_value = rmse;
@@ -393,43 +360,6 @@ public class Factorization implements Runnable, FactorizationData {
         }
         long elapsedTime_1 = System.currentTimeMillis() - start;
         
-        //save rmse changes 
-        try{
-            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd-MM_HH_mm");  
-            LocalDateTime now = LocalDateTime.now();  
-            String time = (dtf.format(now));
-            File myObj = new File("C:\\Users\\asus\\Desktop\\Result\\rmse\\method1_"+time+".txt");
-            myObj.createNewFile();
-            FileWriter writer = new FileWriter(myObj);
-            String s = String.format("param: %d, %d, %.6f, %.6f\n", utils.getLatentSize(), MAX_LOOP, utils.getLambda(), utils.getLearningRate());
-            for(String str: rmseRecord1){
-                s += str+"\n";
-            }
-            writer.write(s);
-            writer.close();
-            this.mdc.insertLog("rmse first method saved\n");
-        } catch(Exception e) {
-            e.printStackTrace();
-        } 
-        
-        //save obj value changes
-        try{
-            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd-MM_HH_mm");  
-            LocalDateTime now = LocalDateTime.now();  
-            String time = (dtf.format(now));
-            File myObj = new File("C:\\Users\\asus\\Desktop\\Result\\objective function\\method1_"+time+".txt");
-            myObj.createNewFile();
-            FileWriter writer = new FileWriter(myObj);
-            String s = String.format("param: %d, %d, %.6f, %.6f, iteration: %s\n", utils.getLatentSize(), MAX_LOOP, utils.getLambda(), utils.getLearningRate(), learningType > 0 ? "Iterative" : "Fixed");
-            for(String str: objValueRecord1){
-                s += str+"\n";
-            }
-            writer.write(s);
-            writer.close();
-            this.mdc.insertLog("objective function first method saved\n");
-        } catch(Exception e) {
-            e.printStackTrace();
-        } 
         
         this.mdc.insertLog("#3.2 Memasuki iterasi untuk optimisasi model matriks faktor kedua.\n"
                 + "# Detail Proses No. 2:\n"
@@ -437,7 +367,6 @@ public class Factorization implements Runnable, FactorizationData {
                 + "# Metode: Faktorisasi dengan dua buah matriks faktor, faktor Pengguna & Bahan Makanan.\n"
                 + "          Serta memanfaatkan matriks biner yang memetakan resep & bahan makanan.\n"
         );
-        System.out.println("faktorisasi 2");
         start = System.currentTimeMillis();  
         try {
             double max_value = Double.MAX_VALUE;
@@ -497,44 +426,6 @@ public class Factorization implements Runnable, FactorizationData {
             }
         }
         long elapsedTime_2 = System.currentTimeMillis() - start;
-
-        //save rmse changes 
-        try{
-            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd-MM_HH_mm");  
-            LocalDateTime now = LocalDateTime.now();  
-            String time = (dtf.format(now));
-            File myObj = new File("C:\\Users\\asus\\Desktop\\Result\\rmse\\method2_"+time+".txt");
-            myObj.createNewFile();
-            FileWriter writer = new FileWriter(myObj);
-            String s = String.format("param: %d, %d, %.6f, %.6f\n", utils.getLatentSize(), MAX_LOOP, utils.getLambda(), utils.getLearningRate());
-            for(String str: rmseRecord2){
-                s += str+"\n";
-            }
-            writer.write(s);
-            writer.close();
-            this.mdc.insertLog("rmse second method saved\n");
-        } catch(Exception e) {
-            e.printStackTrace();
-        } 
-        
-        //save obj value changes
-        try{
-            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd-MM_HH_mm");  
-            LocalDateTime now = LocalDateTime.now();  
-            String time = (dtf.format(now));
-            File myObj = new File("C:\\Users\\asus\\Desktop\\Result\\objective function\\method2_"+time+".txt");
-            myObj.createNewFile();
-            FileWriter writer = new FileWriter(myObj);
-            String s = String.format("param: %d, %d, %.6f, %.6f, iteration: %s\n", utils.getLatentSize(), MAX_LOOP, utils.getLambda(), utils.getLearningRate(), learningType > 0 ? "Iterative" : "Fixed");
-            for(String str: objValueRecord2){
-                s += str+"\n";
-            }
-            writer.write(s);
-            writer.close();
-            this.mdc.insertLog("objective function second method saved\n");
-        } catch(Exception e) {
-            e.printStackTrace();
-        } 
         
         this.firstMethodRes = bestModel1;
         this.secondMethodRes = bestModel2;
@@ -581,16 +472,6 @@ public class Factorization implements Runnable, FactorizationData {
                 1
         );
         
-        rmse_1[0] = rmse_1_test;
-        rmse_1[1] = rmse_1_train;
-        rmse_1[2] = rmse_1_data;
-        
-        rmse_2[0] = rmse_2_test;
-        rmse_2[1] = rmse_2_train;
-        rmse_2[2] = rmse_2_data;
-        
-        time1 = elapsedTime_1;
-        time2 = elapsedTime_2;
         this.mdc.insertLog("Hasil RMSE:\n"
                 + "############################\n"
                 + "# Metode Faktorisasi Pertama\n"
@@ -725,15 +606,5 @@ public class Factorization implements Runnable, FactorizationData {
     @Override
     public HashMap<Integer, String> getIngredientMapReversed() {
         return ingredientMap_r;
-    }
-    
-    /*
-    getter for temporary attributes for automatic testing purpose, delete later
-    */
-    public double[] getFirstRMSE(){return this.rmse_1;}
-    public double[] getSecondRMSE(){return this.rmse_2;}
-    public long getTime(int type){
-        if(type==1) return time1;
-        else return time2;
     }
 }

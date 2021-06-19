@@ -1,29 +1,19 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package Model;
 
-import Util.MatrixUtil;
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
 
 /**
  *
- * @author asus
+ * @author William Walah - 2017730054
  */
 public class Dataset extends Matrix {
     private List<Pair> userRecipe_pair; //List of Pair matrix
@@ -69,9 +59,9 @@ public class Dataset extends Matrix {
     ){
         boolean success = false;
         try {
-            // InputStream in = getClass().getResourceAsStream("/data/dataset.csv");
+            InputStream in = getClass().getResourceAsStream("/data/dataset.csv");
             // pengujian
-            InputStream in = getClass().getResourceAsStream("/data_pengujian/dataset_readable_java.csv");
+            // InputStream in = getClass().getResourceAsStream("/data_pengujian/dataset_readable_java.csv");
             BufferedReader br = new BufferedReader(new InputStreamReader(in));
             String line = "";
             String[] tempArr;
@@ -96,114 +86,47 @@ public class Dataset extends Matrix {
         }
     }
     
-//    public List<Object> split(
-//            HashMap<String, Integer> userMap,
-//            HashMap<String, Integer> recipeMap
-//    ){
-//        // thanks: https://stackoverflow.com/questions/5617016/how-do-i-copy-a-2-dimensional-array-in-java
-//        System.out.println(this.entry.length+"x"+this.entry[0].length);
-//        double[][] trainMatrix = Arrays.stream(this.entry).map(double[]::clone).toArray(double[][]::new);
-//        
-//        TrainMatrix tm = new TrainMatrix(trainMatrix);
-//        TestMatrix _tm = new TestMatrix(this.entry.length, this.entry[0].length);
-//        
-//        List<Pair> dataset = new ArrayList<Pair>();
-//        dataset.addAll(this.userRecipe_pair);
-//        dataset.addAll(this.customeUserPair);
-//        
-//        //Splitting the list using 8:2 ratio for train:test
-//        int sizeMask =  20*dataset.size()/100;
-//        Random r = new Random();
-//        
-//        //reset attribute
-//        this.trainPair.clear();
-//        this.testPair.clear();
-//        
-//        // deep copy the dataset pair to train pair
-//        for(Pair curr: dataset){
-//            this.trainPair.add(new Pair(curr.getUser(),curr.getRecipe()));
-//        }
-//        for (int i = 0; i < sizeMask; i++) {
-//            int rIndex = r.nextInt(this.trainPair.size());
-//            Pair p = this.trainPair.remove(rIndex);
-//            int row_idx = userMap.get(p.getUser());
-//            int col_idx = recipeMap.get(p.getRecipe());
-//            
-//            this.testPair.add(p);
-//            
-//            //apply masking, for faster coding
-//            //set train matrix to 0
-//            tm.changeEntry(row_idx,col_idx, 0);
-//            //set test matrix entry to value
-//            _tm.changeEntry(row_idx,col_idx, this.entry[row_idx][col_idx]);
-//        }
-//        List<Object> result = new LinkedList<Object>(Arrays.asList(tm,_tm));
-//        return result;
-//    }
-    
-    // PENGUJIAN metode 1 & 2
     public List<Object> split(
             HashMap<String, Integer> userMap,
             HashMap<String, Integer> recipeMap
     ){
-        double[][] trainMatrix = null;
-        double[][] testMatrix = null;
-        if(userMap.size() > 4){
-            trainMatrix = new double[][]{
-                {5,0,4,1},
-                {0,0,2,0},
-                {4,0,0,3},
-                {1,0,2,1},
-                {3,0,4,0},
-            };
-            testMatrix = new double[][]{
-                {0,0,0,0},
-                {3,0,0,5},
-                {0,0,0,0},
-                {0,4,0,0},
-                {0,0,0,0}
-            };
-        } else {
-            trainMatrix = new double[][]{
-                {5,0,4,1},
-                {0,0,2,0},
-                {4,0,0,3},
-                {1,0,2,1},
-            };
-            testMatrix = new double[][]{
-                {0,0,0,0},
-                {3,0,0,5},
-                {0,0,0,0},
-                {0,4,0,0}
-            };
-        }
+        // thanks: https://stackoverflow.com/questions/5617016/how-do-i-copy-a-2-dimensional-array-in-java
+        System.out.println(this.entry.length+"x"+this.entry[0].length);
+        double[][] trainMatrix = Arrays.stream(this.entry).map(double[]::clone).toArray(double[][]::new);
         
         TrainMatrix tm = new TrainMatrix(trainMatrix);
         TestMatrix _tm = new TestMatrix(this.entry.length, this.entry[0].length);
-        _tm.setEntry(testMatrix);
+        
+        List<Pair> dataset = new ArrayList<Pair>();
+        dataset.addAll(this.userRecipe_pair);
+        dataset.addAll(this.customeUserPair);
+        
+        //Splitting the list using 8:2 ratio for train:test
+        int sizeMask =  20*dataset.size()/100;
+        Random r = new Random();
         
         //reset attribute
         this.trainPair.clear();
         this.testPair.clear();
         
-        for (int i = 0; i < trainMatrix.length; i++) {
-            for (int j = 0; j < trainMatrix[i].length; j++) {
-                if(trainMatrix[i][j] != 0.0){
-                    if(i>3) this.trainPair.add(new Pair("-1",(j+1)+""));
-                    else this.trainPair.add(new Pair((i+1)+"",(j+1)+""));
-                }
-            }
+        // deep copy the dataset pair to train pair
+        for(Pair curr: dataset){
+            this.trainPair.add(new Pair(curr.getUser(),curr.getRecipe()));
         }
-        
-        for (int i = 0; i < testMatrix.length; i++) {
-            for (int j = 0; j < testMatrix[i].length; j++) {
-                if(testMatrix[i][j] != 0.0){
-                    if(i>3) this.testPair.add(new Pair("-1",(j+1)+""));
-                    else this.testPair.add(new Pair((i+1)+"",(j+1)+""));
-                }
-            }
+        for (int i = 0; i < sizeMask; i++) {
+            int rIndex = r.nextInt(this.trainPair.size());
+            Pair p = this.trainPair.remove(rIndex);
+            int row_idx = userMap.get(p.getUser());
+            int col_idx = recipeMap.get(p.getRecipe());
+            
+            this.testPair.add(p);
+            
+            //apply masking, for faster coding
+            //set train matrix to 0
+            tm.changeEntry(row_idx,col_idx, 0);
+            //set test matrix entry to value
+            _tm.changeEntry(row_idx,col_idx, this.entry[row_idx][col_idx]);
         }
-        
         List<Object> result = new LinkedList<Object>(Arrays.asList(tm,_tm));
         return result;
     }

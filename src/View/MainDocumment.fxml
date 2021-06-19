@@ -118,7 +118,6 @@
                               <Font name="Arial Bold" size="18.0" />
                            </font>
                         </Button>
-                        <Button layoutX="34.0" layoutY="575.0" mnemonicParsing="false" onAction="#automaticTesting" text="Automatic Testing" />
                      </children>
                   </AnchorPane>
               </content>

@@ -1,13 +1,8 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package Model;
 
 /**
  *
- * @author asus
+ * @author William Walah - 2017730054
  */
 abstract class Matrix {
     protected double[][] entry;
@@ -36,14 +31,12 @@ abstract class Matrix {
     public void add(double[][] o){
         if(this.entry.length != o.length) throw new RuntimeException("Addition Error: row length not match");
         else if(this.entry[0].length != o[0].length) throw new RuntimeException("Addition Error: col length not match");
-        
-        //double[][] result = new double[this.entry.length][this.entry[0].length];
+
         for (int i = 0; i < this.entry.length; i++) {
             for (int j = 0; j < this.entry[i].length; j++) {
                 this.entry[i][j] = this.entry[i][j] + o[i][j];
             }
         }
-        //return result;
     }
     
     public double[][] subtract(double[][] o){

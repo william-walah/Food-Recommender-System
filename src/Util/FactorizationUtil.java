@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package Util;
 
 import Interface.FactorizationData;
@@ -13,11 +8,10 @@ import Model.Recipe;
 import Model.TrainMatrix;
 import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  *
- * @author asus
+ * @author William Walah - 2017730054
  */
 public class FactorizationUtil {
 
@@ -55,7 +49,6 @@ public class FactorizationUtil {
             predicted = predicted / TRUNCATION_VAL;
             sumOfErrorSquared += Math.pow((trainM.getEntryByIndex(userIndex, recipeIndex) - predicted), 2);
         }
-        //System.out.println("Error without penalty: "+sumOfErrorSquared);
         double penalty = LAMBDA * (user.calculateVectorLength() + recipe.calculateVectorLength());
         return sumOfErrorSquared + penalty;
     }
@@ -120,14 +113,11 @@ public class FactorizationUtil {
             List<Pair> observable,
             FactorType type
     ) {
-
-        //String targetId = reverseMap.get(index);
         HashMap<String, Integer> map = null;
         HashMap<Integer, String> reverseMap = null;
         TrainMatrix trainM = null;
         double[] res = new double[latentVector.length];
         double[] lambdaTarget = null;
-        //List<Pair> filtered = null;
 
         switch (type) {
             case USER:
@@ -144,21 +134,8 @@ public class FactorizationUtil {
                        double[] pairLatent = fm.getFactorByIndex(recipeIndex);
                        double trainValue = trainM.getEntryByIndex(index, recipeIndex);
                        double error = trainValue - (MatrixUtil.vectorMultiplication(latentVector, pairLatent) / TRUNCATION_VAL);
-                       //double error = trainValue - MatrixUtil.vectorMultiplication(latentVector, pairLatent);
                        //calculate error times pair latent
                        res = MatrixUtil.vectorCalculation(res, pairLatent, 1, 2, error);   
-                       
-                       /*
-                        what if: lambda target is added (minus in the formula)
-                        on each times error times pair calculated and then added to 
-                        res (the Sigma cover till these operation)
-                       
-                       */
-//                       res = MatrixUtil.vectorCalculation(res, 
-//                                //error times pair minus lambda times curr latent vector
-//                               MatrixUtil.vectorCalculation(pairLatent, lambdaTarget, 0, 1, error),
-//                               1
-//                       );
                     }
                 }
                 res = MatrixUtil.vectorCalculation(res, lambdaTarget, 0);
@@ -177,21 +154,8 @@ public class FactorizationUtil {
                         double[] pairLatent = fm.getFactorByIndex(user_index);
                         double trainValue = trainM.getEntryByIndex(user_index, index);
                         double error = trainValue - (MatrixUtil.vectorMultiplication(latentVector, pairLatent) / TRUNCATION_VAL);
-                        //double error = trainValue - MatrixUtil.vectorMultiplication(latentVector, pairLatent);
                         //calculate error times pair latent
                         res = MatrixUtil.vectorCalculation(res, pairLatent, 1, 2, error);
-                        
-                        /*
-                            what if: lambda target is added (minus in the formula)
-                            on each times error times pair calculated and then added to 
-                            res (the Sigma cover till these operation)
-                       
-                        */
-//                        res = MatrixUtil.vectorCalculation(res, 
-//                                //error times pair minus lambda times curr latent vector
-//                                MatrixUtil.vectorCalculation(pairLatent, lambdaTarget, 0, 1, error),
-//                                1
-//                        );
                     }
                 }
                 res = MatrixUtil.vectorCalculation(res, lambdaTarget, 0);
@@ -225,7 +189,6 @@ public class FactorizationUtil {
             sumOfErrorSquared += Math.pow((actual - predicted), 2);
         }
         double penalty = LAMBDA * (user.calculateVectorLength() + ingredient.frobeniusNorm());
-        //System.out.println("Error without penalty: "+sumOfErrorSquared);
         return sumOfErrorSquared + penalty;
     }
 
@@ -266,9 +229,6 @@ public class FactorizationUtil {
             recipeIngredientMap,
             trainPair
         );
-//        System.out.println("lr_val");
-//        MatrixUtil.print(lvIngredientMatrix);
-        //System.out.println(lvIngredientMatrix.length+ " | "+lvIngredientMatrix[0].length);
         user.setEntry(userM);
         ingredient.add(lvIngredientMatrix);
         //optimize value
@@ -291,15 +251,13 @@ public class FactorizationUtil {
         String targetId = reverseMap.get(index);
         double[] res = new double[latentVector.length];
         double[] lambdaTarget = MatrixUtil.scalarMultiplication(LAMBDA, latentVector);
-        //double[][] pair = MatrixUtil.multiplyWithTransposing(ingredient.getEntry(), recipeIngredientMap.transpose(), true);
         double[][] pair = MatrixUtil.multiplyWithTransposing(ingredient.getEntry(), recipeIngredientMap.getEntry(), 0);
         for (Pair curr: observable) {
             if(curr.getUser().equals(targetId)){
                 int recipeIndex = recipeMap.get(curr.getRecipe()); //map = recipeMap
                 double trainValue = trainM.getEntryByIndex(index, recipeIndex); // nilai training
                 double predicted = prediction[index][recipeIndex];
-                double error = trainValue - (predicted / (TRUNCATION_VAL* listOfRecipe.get(recipeIndex).getIngredientLength())); // nilai error / prediksi
-                //double error = trainValue - predicted;
+                double error = trainValue - (predicted / (TRUNCATION_VAL* listOfRecipe.get(recipeIndex).getIngredientLength()));
                 res = MatrixUtil.vectorCalculation(
                         res,
                         MatrixUtil.getColumnVector(pair, recipeIndex),
@@ -307,26 +265,9 @@ public class FactorizationUtil {
                         2, //scalar(error) multiplied to right matrices
                         error   
                 );
-
-                /*
-                    what if: lambda target is added (minus in the formula)
-                    on each times error times pair calculated and then added to 
-                    res (the Sigma cover till these operation)
-                */
-//                res = MatrixUtil.vectorCalculation(
-//                        res,
-//                        MatrixUtil.vectorCalculation(
-//                                MatrixUtil.getColumnVector(pair, recipeIndex),
-//                                lambdaTarget, 
-//                                0, //subtraction
-//                                1, //scalar multiplied to left matrices entry
-//                                error),
-//                        1
-//                );
             }
         }
         res = MatrixUtil.vectorCalculation(res, lambdaTarget, 0, 0, LEARNING_RATE);
-        //res = MatrixUtil.scalarMultiplication(LEARNING_RATE, res);
         return res;
     }
     
@@ -352,26 +293,8 @@ public class FactorizationUtil {
             double[] recipeMask = recipeIngredientMap.getFactorByIndex(recipeIndex);
             double predicted = prediction[userIndex][recipeIndex];
             double error = actual - (predicted / (TRUNCATION_VAL* listOfRecipe.get(recipeIndex).getIngredientLength()));
-            //double error = actual - predicted;
             double[][] pair = MatrixUtil.vectorMultiplicationToMatrix(recipeMask, userVector);
             res = MatrixUtil.matrixCalculation(res,pair,1,false,error);
-            
-            /*
-                what if: lambda target is added (minus in the formula)
-                on each times error times pair calculated and then added to 
-                res (the Sigma cover till these operation)
-            */
-//            res = MatrixUtil.matrixCalculation(
-//                    res, 
-//                    MatrixUtil.matrixCalculation(
-//                            pair,
-//                            lambdaValue,
-//                            0,
-//                            true,
-//                            error
-//                    ),
-//                    1 //addition
-//            );
         }
         res = MatrixUtil.matrixCalculation(res, lambdaValue, 0);
         res = MatrixUtil.scalarMultiplication(LEARNING_RATE, res);

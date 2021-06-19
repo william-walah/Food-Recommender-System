@@ -1,31 +1,15 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package Interface;
 
-import Model.Dataset;
-import Model.FactorMatrix;
-import Model.Ingredient;
-import Model.Recipe;
-import Model.Recipe;
 import Model.Recipe;
 import Model.TestMatrix;
-import Model.TestMatrix;
-import Model.TestMatrix;
 import Model.TrainMatrix;
-import Model.TrainMatrix;
-import Model.TrainMatrix;
-import Model.User;
-import Model.User;
 import Model.User;
 import java.util.HashMap;
 import java.util.List;
 
 /**
  *
- * @author asus
+ * @author William Walah - 2017730054
  */
 public interface FactorizationData {
 

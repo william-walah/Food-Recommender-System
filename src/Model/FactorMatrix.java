@@ -1,11 +1,5 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package Model;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
@@ -14,7 +8,7 @@ import java.util.stream.Stream;
 
 /**
  *
- * @author asus
+ * @author William Walah - 2017730054
  */
 public class FactorMatrix extends Matrix{
     
@@ -32,49 +26,11 @@ public class FactorMatrix extends Matrix{
         super(row,col);
         
         //initialize entry between 1.0 - 5.0
-//        Random r = new Random();
-//        Supplier<Double> randomValue = () -> (double) (r.nextInt(5)+1);
-//        for (int i = 0; i < entry.length; i++) {
-//            entry[i] = Stream.generate(randomValue).limit(entry[i].length).mapToDouble(Double::valueOf).toArray();
-//        }   
-        
-        //pengujian metode 1
-        double[][] newEntry = null;
-        if(t == FactorType.USER){
-            if(row == 5){
-                newEntry = new double[][]{{4,1},
-                {5,1},
-                {3,4},
-                {5,4},
-                {2,2}};
-            } else{
-                newEntry = new double[][]{{4,1},
-                {5,1},
-                {3,4},
-                {5,4}};
-            }
-        } else if(t == FactorType.RECIPES) {
-            newEntry = new double[][]{{2,3},
-                {1,2},
-                {5,2},
-                {1,1}};
-        } else {
-            newEntry = new double[][]{
-                {2.0,1.0},
-                {1.0,3.0},
-                {5.0,3.0},
-                {2.0,4.0},
-                {5.0,5.0},
-                {4.0,4.0},
-                {4.0,4.0},
-                {2.0,4.0},
-                {2.0,5.0},
-                {3.0,2.0},
-                {4.0,1.0},
-                {3.0,5.0},    
-            };
-        }
-       this.entry = newEntry;
+        Random r = new Random();
+        Supplier<Double> randomValue = () -> (double) (r.nextInt(5)+1);
+        for (int i = 0; i < entry.length; i++) {
+            entry[i] = Stream.generate(randomValue).limit(entry[i].length).mapToDouble(Double::valueOf).toArray();
+        }   
     }
     
     // unique for ingredient recipe matrix map
