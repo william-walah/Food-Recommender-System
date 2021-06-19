@@ -467,7 +467,7 @@ public class MainDocumentController implements Initializable {
             }
             // start the program...
             // using thread so that the UI is responding
-            if(customRating.size()>=5){
+            if(customRating.size()>=1){
                 secondProcess.addCustomUser("-1", customRating);
                 top_n_container.setDisable(true);
                 Thread mainThread = new Thread(secondProcess);
@@ -500,7 +500,7 @@ public class MainDocumentController implements Initializable {
                 startBtn.setDisable(false);
                 param_save.setDisable(false);
                 custom_user_table.setDisable(false);
-                this.programStatus.setText("PERHATIAN!! Tolong masukkan setidaknya 5 buah rating. (Tercatat: "+customRating.size()+")");
+                this.programStatus.setText("PERHATIAN!! Tolong masukkan setidaknya 1 buah rating. (Tercatat: "+customRating.size()+")");
             }
         } else{
             if(isInProcess) this.programStatus.setText("PERHATIAN!! Proses faktorisasi lain sedang berjalan.");
@@ -665,15 +665,15 @@ public class MainDocumentController implements Initializable {
     
     @FXML
     private void automaticTesting(ActionEvent event){
-//        String[] vectorLength = new String[] {"2","3","4","5","6","7","8","9","10"};
-//        String[] maxIteration = new String[] {"100","500","1000"};
-//        String[] lambdaValue = new String[] {"0.5","1","2","3"};
-//        String[] lrValue = new String[] {"0.1","0.01","0.001","0.0001","0.00001"};
-
-        String[] vectorLength = new String[] {"50","100"};
+        String[] vectorLength = new String[] {"2"};
         String[] maxIteration = new String[] {"400"};
         String[] lambdaValue = new String[] {"0.1"};
         String[] lrValue = new String[] {"0.001","0.0001"};
+
+//        String[] vectorLength = new String[] {"50","100"};
+//        String[] maxIteration = new String[] {"400"};
+//        String[] lambdaValue = new String[] {"0.1"};
+//        String[] lrValue = new String[] {"0.001","0.0001"};
 
 //        String[] vectorLength = new String[] {"2"};
 //        String[] maxIteration = new String[] {"1000"};

@@ -149,9 +149,9 @@ public class Factorization implements Runnable, FactorizationData {
             
                 to be usable in jar, look below. Thanks: https://stackoverflow.com/questions/20389255/reading-a-resource-file-from-within-jar
             */
-            InputStream in = getClass().getResourceAsStream("/data/recipe_ingredient_list.csv");
+            //InputStream in = getClass().getResourceAsStream("/data/recipe_ingredient_list.csv");
             //pengujian
-            //InputStream in = getClass().getResourceAsStream("/data_pengujian/dataset_recipes_ingredient_list_readable_java.csv");
+            InputStream in = getClass().getResourceAsStream("/data_pengujian/dataset_recipes_ingredient_list_readable_java.csv");
             BufferedReader br = new BufferedReader(new InputStreamReader(in));
             String line = "";
             String[] tempArr;
@@ -186,9 +186,9 @@ public class Factorization implements Runnable, FactorizationData {
     private boolean readUsersData() {
         boolean success = false;
         try {
-            InputStream in = getClass().getResourceAsStream("/data/userId_list.csv");
+            //InputStream in = getClass().getResourceAsStream("/data/userId_list.csv");
             // pengujian
-           // InputStream in = getClass().getResourceAsStream("/data_pengujian/dataset_userId_list.csv");
+            InputStream in = getClass().getResourceAsStream("/data_pengujian/dataset_userId_list.csv");
             BufferedReader br = new BufferedReader(new InputStreamReader(in));
             String line = "";
             int index = 0;
@@ -228,6 +228,7 @@ public class Factorization implements Runnable, FactorizationData {
                 v[recipeIndex] = Double.parseDouble(customRating.get(id));
                 customePair.add(new Pair(userId,id));
             }
+            System.out.println(this.users.size()+"=="+INIT_USER_SPACE);
             if(this.users.size() == INIT_USER_SPACE){
                 //already done some custom recommendation before
                 userMap.put(userId, this.users.size()); //if user space = 500, then max index at 499, so user.size give index 500
@@ -235,6 +236,10 @@ public class Factorization implements Runnable, FactorizationData {
                 //since userMap and userMap_r reference is from dataset d attribute, so setting them here is the same for the dataset attribute
                 this.users.add(new User(userId));   
                 this.dataset.addNewVector(v,customePair);
+                System.out.println(users.size());
+                System.out.println(userMap.size());
+                System.out.println(userMap_r.size());
+                System.out.println(this.dataset.getRowLength());
             } else if(this.users.size() < INIT_USER_SPACE) throw new Exception("User size is less than its initial size");
             else {
                 int idx = userMap.get(userId);
@@ -441,9 +446,9 @@ public class Factorization implements Runnable, FactorizationData {
                 if(this.learningType > 0) this.utils.setLearningRate(1.0/((MAX_LOOP-loop)*1.0)); //iteratively 
                 System.out.println(MAX_LOOP-loop);
                 double[][] currPrediction = MatrixUtil.multiplyWithTransposing(
-                        MatrixUtil.multiplyWithTransposing(userFactor_2.getEntry(), ingredientFactor.getEntry(), false),
+                        MatrixUtil.multiplyWithTransposing(userFactor_2.getEntry(), ingredientFactor.getEntry(), 1),
                         recipeIngredientsMap.getEntry(),
-                        false); 
+                        1); 
                         
                 double objectiveValue = utils.objectiveFunction_m2(
                         currPrediction,
@@ -452,7 +457,7 @@ public class Factorization implements Runnable, FactorizationData {
                         this.dataset.getTrainPair()
                 );
                 
-                //System.out.println(objectiveValue);
+                System.out.println(objectiveValue);
                 
                 double rmse = utils.rmse(this.dataset.getTrainPair(), currPrediction, this.trainM.getEntry(), 1);
                 
@@ -586,24 +591,24 @@ public class Factorization implements Runnable, FactorizationData {
         
         time1 = elapsedTime_1;
         time2 = elapsedTime_2;
-//        this.mdc.insertLog("Hasil RMSE:\n"
-//                + "############################\n"
-//                + "# Metode Faktorisasi Pertama\n"
-//                + String.format("# RMSE (Test  Set) = %.3f\n",rmse_1_test)
-//                + String.format("# RMSE (Train Set) = %.3f\n",rmse_1_train)
-//                + String.format("# RMSE (Data  Set) = %.3f\n",rmse_1_data)
-//                + String.format("# Waktu Berjalan: %.3fs\n", elapsedTime_1/1000F)
-//                + "############################\n"
-//                + "\n"
-//                + "############################\n"
-//                + "# SECOND OPTIMIZATION METHOD\n"
-//                + String.format("# RMSE (Test  Set) = %.5f\n",rmse_2_test)
-//                + String.format("# RMSE (Train Set) = %.5f\n",rmse_2_train)
-//                + String.format("# RMSE (Data  Set) = %.5f\n",rmse_2_data)
-//                + String.format("# Waktu Berjalan: %.3fs\n", elapsedTime_2/1000F)
-//                + "############################\n"
-//                + "\n"
-//                + "Seluruh proeses faktorisasi telah selesai.\n");
+        this.mdc.insertLog("Hasil RMSE:\n"
+                + "############################\n"
+                + "# Metode Faktorisasi Pertama\n"
+                + String.format("# RMSE (Test  Set) = %.3f\n",rmse_1_test)
+                + String.format("# RMSE (Train Set) = %.3f\n",rmse_1_train)
+                + String.format("# RMSE (Data  Set) = %.3f\n",rmse_1_data)
+                + String.format("# Waktu Berjalan: %.3fs\n", elapsedTime_1/1000F)
+                + "############################\n"
+                + "\n"
+                + "############################\n"
+                + "# SECOND OPTIMIZATION METHOD\n"
+                + String.format("# RMSE (Test  Set) = %.5f\n",rmse_2_test)
+                + String.format("# RMSE (Train Set) = %.5f\n",rmse_2_train)
+                + String.format("# RMSE (Data  Set) = %.5f\n",rmse_2_data)
+                + String.format("# Waktu Berjalan: %.3fs\n", elapsedTime_2/1000F)
+                + "############################\n"
+                + "\n"
+                + "Seluruh proeses faktorisasi telah selesai.\n");
     }
     
     protected List<RecipePredicted> getUserPrediction(String userId){

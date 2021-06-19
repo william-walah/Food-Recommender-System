@@ -52,11 +52,7 @@ public class FactorizationUtil {
             double[] userFactor = user.getFactorByIndex(userIndex); //reference
             double[] recipeFactor = recipe.getFactorByIndex(recipeIndex); //reference
             double predicted = MatrixUtil.vectorMultiplication(userFactor, recipeFactor);
-            //truncated value so it lays between 0-5
-            //current latent factor length = 2
-            //possible value is 5*5 + 5*5 = 50, so its divided by 10
             predicted = predicted / TRUNCATION_VAL;
-            //System.out.println(String.format("%.3f_p %.3f_a",predicted,trainM.getEntryByIndex(userIndex, recipeIndex)));
             sumOfErrorSquared += Math.pow((trainM.getEntryByIndex(userIndex, recipeIndex) - predicted), 2);
         }
         //System.out.println("Error without penalty: "+sumOfErrorSquared);
@@ -148,6 +144,7 @@ public class FactorizationUtil {
                        double[] pairLatent = fm.getFactorByIndex(recipeIndex);
                        double trainValue = trainM.getEntryByIndex(index, recipeIndex);
                        double error = trainValue - (MatrixUtil.vectorMultiplication(latentVector, pairLatent) / TRUNCATION_VAL);
+                       //double error = trainValue - MatrixUtil.vectorMultiplication(latentVector, pairLatent);
                        //calculate error times pair latent
                        res = MatrixUtil.vectorCalculation(res, pairLatent, 1, 2, error);   
                        
@@ -180,6 +177,7 @@ public class FactorizationUtil {
                         double[] pairLatent = fm.getFactorByIndex(user_index);
                         double trainValue = trainM.getEntryByIndex(user_index, index);
                         double error = trainValue - (MatrixUtil.vectorMultiplication(latentVector, pairLatent) / TRUNCATION_VAL);
+                        //double error = trainValue - MatrixUtil.vectorMultiplication(latentVector, pairLatent);
                         //calculate error times pair latent
                         res = MatrixUtil.vectorCalculation(res, pairLatent, 1, 2, error);
                         
@@ -293,13 +291,15 @@ public class FactorizationUtil {
         String targetId = reverseMap.get(index);
         double[] res = new double[latentVector.length];
         double[] lambdaTarget = MatrixUtil.scalarMultiplication(LAMBDA, latentVector);
-        double[][] pair = MatrixUtil.multiplyWithTransposing(ingredient.getEntry(), recipeIngredientMap.transpose(), true);
+        //double[][] pair = MatrixUtil.multiplyWithTransposing(ingredient.getEntry(), recipeIngredientMap.transpose(), true);
+        double[][] pair = MatrixUtil.multiplyWithTransposing(ingredient.getEntry(), recipeIngredientMap.getEntry(), 0);
         for (Pair curr: observable) {
             if(curr.getUser().equals(targetId)){
                 int recipeIndex = recipeMap.get(curr.getRecipe()); //map = recipeMap
                 double trainValue = trainM.getEntryByIndex(index, recipeIndex); // nilai training
                 double predicted = prediction[index][recipeIndex];
                 double error = trainValue - (predicted / (TRUNCATION_VAL* listOfRecipe.get(recipeIndex).getIngredientLength())); // nilai error / prediksi
+                //double error = trainValue - predicted;
                 res = MatrixUtil.vectorCalculation(
                         res,
                         MatrixUtil.getColumnVector(pair, recipeIndex),
@@ -352,6 +352,7 @@ public class FactorizationUtil {
             double[] recipeMask = recipeIngredientMap.getFactorByIndex(recipeIndex);
             double predicted = prediction[userIndex][recipeIndex];
             double error = actual - (predicted / (TRUNCATION_VAL* listOfRecipe.get(recipeIndex).getIngredientLength()));
+            //double error = actual - predicted;
             double[][] pair = MatrixUtil.vectorMultiplicationToMatrix(recipeMask, userVector);
             res = MatrixUtil.matrixCalculation(res,pair,1,false,error);
             

@@ -32,41 +32,49 @@ public class FactorMatrix extends Matrix{
         super(row,col);
         
         //initialize entry between 1.0 - 5.0
-        Random r = new Random();
-        Supplier<Double> randomValue = () -> (double) (r.nextInt(5)+1);
-        for (int i = 0; i < entry.length; i++) {
-            entry[i] = Stream.generate(randomValue).limit(entry[i].length).mapToDouble(Double::valueOf).toArray();
-        }   
+//        Random r = new Random();
+//        Supplier<Double> randomValue = () -> (double) (r.nextInt(5)+1);
+//        for (int i = 0; i < entry.length; i++) {
+//            entry[i] = Stream.generate(randomValue).limit(entry[i].length).mapToDouble(Double::valueOf).toArray();
+//        }   
         
         //pengujian metode 1
-//        double[][] newEntry = null;
-//        if(t == FactorType.USER){
-//            newEntry = new double[][]{{4,1},
-//                {5,1},
-//                {3,4},
-//                {5,4}};
-//        } else if(t == FactorType.RECIPES) {
-//            newEntry = new double[][]{{2,3},
-//                {1,2},
-//                {5,2},
-//                {1,1}};
-//        } else {
-//            newEntry = new double[][]{
-//                {2.0,1.0},
-//                {1.0,3.0},
-//                {5.0,3.0},
-//                {2.0,4.0},
-//                {5.0,5.0},
-//                {4.0,4.0},
-//                {4.0,4.0},
-//                {2.0,4.0},
-//                {2.0,5.0},
-//                {3.0,2.0},
-//                {4.0,1.0},
-//                {3.0,5.0},    
-//            };
-//        }
-//       this.entry = newEntry;
+        double[][] newEntry = null;
+        if(t == FactorType.USER){
+            if(row == 5){
+                newEntry = new double[][]{{4,1},
+                {5,1},
+                {3,4},
+                {5,4},
+                {2,2}};
+            } else{
+                newEntry = new double[][]{{4,1},
+                {5,1},
+                {3,4},
+                {5,4}};
+            }
+        } else if(t == FactorType.RECIPES) {
+            newEntry = new double[][]{{2,3},
+                {1,2},
+                {5,2},
+                {1,1}};
+        } else {
+            newEntry = new double[][]{
+                {2.0,1.0},
+                {1.0,3.0},
+                {5.0,3.0},
+                {2.0,4.0},
+                {5.0,5.0},
+                {4.0,4.0},
+                {4.0,4.0},
+                {2.0,4.0},
+                {2.0,5.0},
+                {3.0,2.0},
+                {4.0,1.0},
+                {3.0,5.0},    
+            };
+        }
+       this.entry = newEntry;
     }
     
     // unique for ingredient recipe matrix map

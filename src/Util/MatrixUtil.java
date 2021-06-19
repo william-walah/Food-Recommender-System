@@ -205,14 +205,14 @@ public class MatrixUtil {
         return res;
     }
     
-    public static double[][] multiplyWithTransposing(double[][] left, double[][] right, boolean transpose){
+    public static double[][] multiplyWithTransposing(double[][] left, double[][] right, int transpose){
         //true (left), false(right)
         double[][] res = null;
         int r1 = left.length;
         int c1 = left[0].length;
         int r2 = right.length;
         int c2 = right[0].length;
-        if(transpose){ //left tranpose
+        if(transpose<0){ //left tranpose
             if(r1 != r2) throw new RuntimeException("Error matrix calculation: matrix dimension missmatch");
             res = new double[c1][c2];   
             for (int i = 0; i < c1; i++) {
@@ -222,13 +222,26 @@ public class MatrixUtil {
                     }
                 }
             }
-        } else { //right transpose
+        } else if(transpose>0) { //right transpose
             if(c1 != c2) throw new RuntimeException("Error matrix calculation: matrix dimension missmatch");
             res = new double[r1][r2];   
             for (int i = 0; i < r1; i++) {
                 for (int j = 0; j < r2; j++) {
                     for (int k = 0; k < c1; k++) {
                         res[i][j] += left[i][k] * right[j][k];
+                    }
+                }
+            }
+        }
+        else {
+            if(r1 != c2){
+                throw new RuntimeException("Error matrix calculation: matrix dimension missmatch");
+            }
+            res = new double[c1][r2];
+            for (int i = 0; i < c1; i++) {
+                for (int j = 0; j < r2; j++) {
+                    for (int k = 0; k < r1; k++) {
+                        res[i][j] += left[k][i] * right[j][k];
                     }
                 }
             }
