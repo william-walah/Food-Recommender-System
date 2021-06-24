@@ -196,11 +196,9 @@ public class Factorization implements Runnable, FactorizationData {
             List<Pair> customePair = new ArrayList<Pair>();
             for(String id: customRating.keySet()){
                 int recipeIndex = recipeMap.get(id);
-                System.out.println(Double.parseDouble(customRating.get(id)));
                 v[recipeIndex] = Double.parseDouble(customRating.get(id));
                 customePair.add(new Pair(userId,id));
             }
-            System.out.println(this.users.size()+"=="+INIT_USER_SPACE);
             if(this.users.size() == INIT_USER_SPACE){
                 //already done some custom recommendation before
                 userMap.put(userId, this.users.size()); //if user space = 500, then max index at 499, so user.size give index 500
@@ -208,10 +206,6 @@ public class Factorization implements Runnable, FactorizationData {
                 //since userMap and userMap_r reference is from dataset d attribute, so setting them here is the same for the dataset attribute
                 this.users.add(new User(userId));   
                 this.dataset.addNewVector(v,customePair);
-                System.out.println(users.size());
-                System.out.println(userMap.size());
-                System.out.println(userMap_r.size());
-                System.out.println(this.dataset.getRowLength());
             } else if(this.users.size() < INIT_USER_SPACE) throw new Exception("User size is less than its initial size");
             else {
                 int idx = userMap.get(userId);
@@ -373,7 +367,6 @@ public class Factorization implements Runnable, FactorizationData {
             int loop = MAX_LOOP;
             while (loop-- > 0) {
                 if(this.learningType > 0) this.utils.setLearningRate(1.0/((MAX_LOOP-loop)*1.0)); //iteratively 
-                System.out.println(MAX_LOOP-loop);
                 double[][] currPrediction = MatrixUtil.multiplyWithTransposing(
                         MatrixUtil.multiplyWithTransposing(userFactor_2.getEntry(), ingredientFactor.getEntry(), 1),
                         recipeIngredientsMap.getEntry(),
@@ -385,8 +378,6 @@ public class Factorization implements Runnable, FactorizationData {
                         ingredientFactor,
                         this.dataset.getTrainPair()
                 );
-                
-                System.out.println(objectiveValue);
                 
                 double rmse = utils.rmse(this.dataset.getTrainPair(), currPrediction, this.trainM.getEntry(), 1);
                 
@@ -493,7 +484,6 @@ public class Factorization implements Runnable, FactorizationData {
     }
     
     protected List<RecipePredicted> getUserPrediction(String userId){
-        System.out.println(userId);
         int userIndex = this.userMap.get(userId);
         List<RecipePredicted> result = new ArrayList<RecipePredicted>();
         try{

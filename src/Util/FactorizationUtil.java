@@ -114,7 +114,7 @@ public class FactorizationUtil {
             FactorType type
     ) {
         HashMap<String, Integer> map = null;
-        HashMap<Integer, String> reverseMap = null;
+        HashMap<Integer, String> reverseMap = null; 
         TrainMatrix trainM = null;
         double[] res = new double[latentVector.length];
         double[] lambdaTarget = null;
@@ -133,7 +133,8 @@ public class FactorizationUtil {
                        int recipeIndex = map.get(curr.getRecipe()); //map = recipeMap
                        double[] pairLatent = fm.getFactorByIndex(recipeIndex);
                        double trainValue = trainM.getEntryByIndex(index, recipeIndex);
-                       double error = trainValue - (MatrixUtil.vectorMultiplication(latentVector, pairLatent) / TRUNCATION_VAL);
+                       double error = trainValue - 
+                               (MatrixUtil.vectorMultiplication(latentVector, pairLatent) / TRUNCATION_VAL);
                        //calculate error times pair latent
                        res = MatrixUtil.vectorCalculation(res, pairLatent, 1, 2, error);   
                     }
@@ -153,7 +154,8 @@ public class FactorizationUtil {
                         int user_index = map.get(curr.getUser()); //map = userMap
                         double[] pairLatent = fm.getFactorByIndex(user_index);
                         double trainValue = trainM.getEntryByIndex(user_index, index);
-                        double error = trainValue - (MatrixUtil.vectorMultiplication(latentVector, pairLatent) / TRUNCATION_VAL);
+                        double error = trainValue - 
+                                (MatrixUtil.vectorMultiplication(latentVector, pairLatent) / TRUNCATION_VAL);
                         //calculate error times pair latent
                         res = MatrixUtil.vectorCalculation(res, pairLatent, 1, 2, error);
                     }

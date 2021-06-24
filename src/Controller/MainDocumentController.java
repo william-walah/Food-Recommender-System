@@ -585,7 +585,7 @@ public class MainDocumentController implements Initializable {
                 if(success) programStatus.setText("Berhasil menyimpan data rating. Silahkan lihat area log untuk alamat penyimpanan.");
                 else programStatus.setText("Gagal dalam proses menyimpan data rating. Lihat riwayat aktivitas program untuk lebih detail.");
             }
-            insertLog("Tersimpan pada: "+file.getAbsolutePath());
+            insertLog("Tersimpan pada: "+file.getAbsolutePath()+"\n");
         } else {
             programStatus.setText("Gagal dalam proses menyimpan data rating. Lihat riwayat aktivitas program untuk lebih detail.");
         }

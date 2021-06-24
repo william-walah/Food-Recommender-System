@@ -3,14 +3,10 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/C:/Users/asus/Documents/NetBeansProjects/Recommendation_Model/src/Model/Matrix.java</file>
             <file>file:/C:/Users/asus/Documents/NetBeansProjects/Recommendation_Model/src/Controller/Factorization.java</file>
             <file>file:/C:/Users/asus/Documents/NetBeansProjects/Recommendation_Model/src/Controller/MainDocumentController.java</file>
-            <file>file:/C:/Users/asus/Documents/NetBeansProjects/Recommendation_Model/src/Model/FactorMatrix.java</file>
-            <file>file:/C:/Users/asus/Documents/NetBeansProjects/Recommendation_Model/src/data_pengujian/dataset_readable_java.csv</file>
-            <file>file:/C:/Users/asus/Documents/NetBeansProjects/Recommendation_Model/src/Model/Dataset.java</file>
             <file>file:/C:/Users/asus/Documents/NetBeansProjects/Recommendation_Model/src/Util/FactorizationUtil.java</file>
-            <file>file:/C:/Users/asus/Documents/NetBeansProjects/Recommendation_Model/src/Util/MatrixUtil.java</file>
+            <file>file:/C:/Users/asus/Documents/NetBeansProjects/Recommendation_Model/src/View/FXMain.java</file>
         </group>
     </open-files>
 </project-private>
